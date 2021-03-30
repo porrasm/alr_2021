@@ -40,6 +40,7 @@ namespace Exercise2_Sudoku {
             // Methods separated for clarity, could combine loops for optimal performance
             AtLeastOneInRowAndColumn();
             AtMostOneInRowAndCol_Pairwise();
+            AtMostOneInCell();
         }
 
 
@@ -59,17 +60,34 @@ namespace Exercise2_Sudoku {
 
         private void AtMostOneInRowAndCol_Pairwise() {
 
-            for (int i = 0; i < sudoku.N2; i++) {
+            for (int row = 0; row < sudoku.N2; row++) {
                 for (int val = 0; val < sudoku.N2; val++) {
 
-                    for (int j1 = 0; j1 < sudoku.N2; j1++) {
-                        for (int j2 = 0; j2 < sudoku.N2; j2++) {
-                            if (j1 == j2) {
+                    for (int col1 = 0; col1 < sudoku.N2; col1++) {
+                        for (int col2 = 0; col2 < sudoku.N2; col2++) {
+                            if (col1 == col2) {
                                 continue;
                             }
 
-                            AddClause(-VarIndex(i, j1, val), -VarIndex(i, j2, val));
-                            AddClause(-VarIndex(j1, i, val), -VarIndex(j2, i, val));
+                            AddClause(-VarIndex(row, col1, val), -VarIndex(row, col2, val));
+                            AddClause(-VarIndex(col1, row, val), -VarIndex(col2, row, val));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void AtMostOneInCell() {
+            for (int row = 0; row < sudoku.N2; row++) {
+                for (int col = 0; col < sudoku.N2; col++) {
+
+                    for (int val1 = 0; val1 < sudoku.N2; val1++) {
+                        for (int val2 = 0; val2 < sudoku.N2; val2++) {
+                            if (val1 == val2) {
+                                continue;
+                            }
+
+                            AddClause(-VarIndex(row, col, val1), -VarIndex(row, col, val2));
                         }
                     }
                 }
