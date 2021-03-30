@@ -15,7 +15,7 @@ namespace Exercise2_Sudoku {
 
             AddFixedConstraints();
             AddRowAndColumnConstraints();
-            AddGridConstraints();
+            //AddGridConstraints();
         }
 
         #region fixed
@@ -44,14 +44,14 @@ namespace Exercise2_Sudoku {
 
 
         private void AtLeastOneInRowAndColumn() {
-            for (int i = 0; i < sudoku.N2; i++) {
+            for (int row = 0; row < sudoku.N2; row++) {
                 for (int val = 0; val < sudoku.N2; val++) {
 
                     int[] rowClause = new int[sudoku.N2];
                     int[] colClause = new int[sudoku.N2];
-                    for (int j = 0; j < sudoku.N2; j++) {
-                        rowClause[j] = VarIndex(i, j, val);
-                        colClause[j] = VarIndex(j, i, val);
+                    for (int col = 0; col < sudoku.N2; col++) {
+                        rowClause[col] = VarIndex(row, col, val);
+                        colClause[col] = VarIndex(col, row, val);
                     }
                 }
             }
