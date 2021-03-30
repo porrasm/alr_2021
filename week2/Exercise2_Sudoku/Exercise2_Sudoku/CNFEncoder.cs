@@ -10,6 +10,11 @@ namespace Exercise2_Sudoku {
         public List<int[]> Sentence { get; protected set; } = new List<int[]>();
 
         public void AddClause(params int[] variables) {
+            foreach (int var in variables) {
+                if (var == 0) {
+                    throw new Exception("Invalid variable");
+                }
+            }
             Sentence.Add(variables);
         }
 
