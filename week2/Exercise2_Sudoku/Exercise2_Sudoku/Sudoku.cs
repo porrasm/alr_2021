@@ -45,28 +45,6 @@ namespace Exercise2_Sudoku {
             return sudokus;
         }
 
-        public override string ToString() {
-            StringBuilder b = new StringBuilder();
-
-            for (int x = 0; x < N2; x++) {
-
-                if (x % N == 0) {
-                    b.Append("\n");
-                }
-                for (int y = 0; y < N2; y++) {
-                    if (y % N == 0) {
-                        b.Append("  ");
-                    }
-
-                    b.Append($"{ValueToString(Table[x, y])} ");
-                }
-
-                b.Append("\n");
-            }
-
-            return b.ToString();
-        }
-
         public bool IsValid() {
             HashSet<int> used = new HashSet<int>();
             // Row
@@ -109,6 +87,29 @@ namespace Exercise2_Sudoku {
             }
 
             return false;
+        }
+
+        public override string ToString() {
+            StringBuilder b = new StringBuilder();
+
+            for (int x = 0; x < N2; x++) {
+
+                if (x % N == 0) {
+                    b.Append("\n");
+                }
+                for (int y = 0; y < N2; y++) {
+                    if (y % N == 0) {
+                        b.Append("  ");
+                    }
+
+                    b.Append($"{ValueToString(Table[x, y])} ");
+                }
+
+                b.Append("\n\n");
+            }
+
+            b.Append("Is valid: " + IsValid());
+            return b.ToString();
         }
 
         private void FromGridIndex(int grid, int x, int y, out int newX, out int newY) {

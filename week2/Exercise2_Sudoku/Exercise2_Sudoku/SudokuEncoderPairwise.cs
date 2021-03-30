@@ -12,21 +12,28 @@ namespace Exercise2_Sudoku {
         public SudokuEncoderPairwise(Sudoku sudoku) {
             this.sudoku = sudoku;
             VariableCount = sudoku.N2 * sudoku.N2 * sudoku.N2;
+            Console.WriteLine(sudoku);
 
             AddFixedConstraints();
+
+            return;
             AddRowAndColumnConstraints();
             AddGridConstraints();
         }
 
         #region fixed
         private void AddFixedConstraints() {
-            for (int i = 0; i < sudoku.N2; i++) {
-                for (int j = 0; j < sudoku.N2; j++) {
+            for (int row = 0; row < sudoku.N2; row++) {
+                for (int col = 0; col < sudoku.N2; col++) {
+
                     // from 1 based to 0 based
-                    int val = sudoku.Table[i, j] - 1;
+                    int val = sudoku.Table[row, col] - 1;
                     if (val >= 0) {
-                        // from 0 based back to 1 based
-                        AddClause(VarIndex(i, j, val));
+                        // from 0 based to 1 based variable index
+                        AddClause(VarIndex(row, col, val));
+                        Console.WriteLine("Fix variable: " + VarIndex(row, col, val));
+                    } else {
+                        AddClause(-VarIndex(row, col, 0));
                     }
                 }
             }
@@ -125,7 +132,18 @@ namespace Exercise2_Sudoku {
 
         #region utility
         private int VarIndex(int x, int y, int value) {
-            return x * sudoku.N2 * sudoku.N2 + y * sudoku.N2 + value + 1;
+            int var = x * sudoku.N2 * sudoku.N2 + y * sudoku.N2 + value + 1;
+
+            Program.SetIndices(sudoku.N2, var, out int backX, out int backY, out int backValue);
+
+            if (x != backX || y != backY || value != backValue) {
+                Console.WriteLine($"Original: ({x}, {y}) = {value}");
+                Console.WriteLine($"Variable: {var}");
+                Console.WriteLine($"Back    : ({backX}, {backY}) = {backValue}");
+                throw new Exception("Invalid conversion");
+            }
+
+            return var;
         }
         private int VarGridIndex(int grid, int x, int y, int val) {
             int gridX = grid / sudoku.N;
