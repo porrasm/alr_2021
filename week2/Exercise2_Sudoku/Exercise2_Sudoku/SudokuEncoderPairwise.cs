@@ -15,7 +15,7 @@ namespace Exercise2_Sudoku {
 
             AddFixedConstraints();
             AddRowAndColumnConstraints();
-            //AddGridConstraints();
+            AddGridConstraints();
         }
 
         #region fixed
