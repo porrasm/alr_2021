@@ -44,7 +44,7 @@ namespace Exercise2_Sudoku {
 
             //AtMostOneInRowAndCol_Pairwise();
             AtMostOneInRow_Ladder();
-            AtMostOneInCol_Ladder();
+            //AtMostOneInCol_Ladder();
 
             ExactlyOnePerCell_Pairwise();
         }

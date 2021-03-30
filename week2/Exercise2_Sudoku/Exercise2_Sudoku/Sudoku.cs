@@ -79,9 +79,9 @@ namespace Exercise2_Sudoku {
 
                 for (int gridX = 0; gridX < N; gridX++) {
                     for (int gridY = 0; gridY < N; gridY++) {
-                        Console.WriteLine($"GRID CHECK FAIL: " + grid);
                         FromGridIndex(grid, gridX, gridY, out int x, out int y);
                         if (!used.Add(Table[x, y])) {
+                            Console.WriteLine($"GRID CHECK FAIL: " + grid);
                             return false;
                         }
                     }
