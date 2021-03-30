@@ -40,7 +40,7 @@ namespace Exercise2_Sudoku {
             // Methods separated for clarity, could combine loops for optimal performance
             AtLeastOneInRowAndColumn();
             AtMostOneInRowAndCol_Pairwise();
-            AtMostOneInCell();
+            ExactlyOnePerCell();
         }
 
 
@@ -77,11 +77,14 @@ namespace Exercise2_Sudoku {
             }
         }
 
-        private void AtMostOneInCell() {
+        private void ExactlyOnePerCell() {
             for (int row = 0; row < sudoku.N2; row++) {
                 for (int col = 0; col < sudoku.N2; col++) {
 
+                    List<int> clause = new List<int>();
+
                     for (int val1 = 0; val1 < sudoku.N2; val1++) {
+                        clause.Add(VarIndex(row, col, val1));
                         for (int val2 = 0; val2 < sudoku.N2; val2++) {
                             if (val1 == val2) {
                                 continue;
@@ -90,6 +93,8 @@ namespace Exercise2_Sudoku {
                             AddClause(-VarIndex(row, col, val1), -VarIndex(row, col, val2));
                         }
                     }
+
+                    AddClause(clause.ToArray());
                 }
             }
         }
