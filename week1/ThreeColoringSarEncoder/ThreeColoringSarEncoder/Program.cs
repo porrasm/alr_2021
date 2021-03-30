@@ -37,11 +37,18 @@ namespace ThreeColoringSatEncoder {
                 Edge.FromChars('f', 'g'));
 
             ThreeColoringCNFSentence sentence3b = new ThreeColoringCNFSentence(graph3b);
+            KColoringCNFSentence sentence3bK = new KColoringCNFSentence(graph3b, 3);
 
             ThreeColoringCNFSentence sentence3c = new ThreeColoringCNFSentence(graph3c);
 
             SaveCNF("week1_3b", sentence3b.ToDIMACS());
             SaveCNF("week1_3c", sentence3c.ToDIMACS());
+
+            Console.WriteLine(sentence3b.ToDIMACS());
+            Console.WriteLine();
+            Console.WriteLine(sentence3bK.ToDIMACS());
+
+            Console.ReadLine();
         }
 
         private static void Test2() {
