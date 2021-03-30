@@ -12,11 +12,8 @@ namespace Exercise2_Sudoku {
         public SudokuEncoderPairwise(Sudoku sudoku) {
             this.sudoku = sudoku;
             VariableCount = sudoku.N2 * sudoku.N2 * sudoku.N2;
-            Console.WriteLine(sudoku);
 
             AddFixedConstraints();
-
-            return;
             AddRowAndColumnConstraints();
             AddGridConstraints();
         }
@@ -31,10 +28,8 @@ namespace Exercise2_Sudoku {
                     if (val >= 0) {
                         // from 0 based to 1 based variable index
                         AddClause(VarIndex(row, col, val));
-                        Console.WriteLine("Fix variable: " + VarIndex(row, col, val));
-                    } else {
-                        AddClause(-VarIndex(row, col, 0));
                     }
+
                 }
             }
         }
@@ -79,7 +74,6 @@ namespace Exercise2_Sudoku {
                     }
                 }
             }
-
         }
         #endregion
 
