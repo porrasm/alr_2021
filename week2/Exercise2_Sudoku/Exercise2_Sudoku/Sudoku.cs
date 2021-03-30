@@ -52,6 +52,7 @@ namespace Exercise2_Sudoku {
                 used.Clear();
                 for (int y = 0; y < N2; y++) {
                     if (Table[x, y] == 0) {
+                        Console.WriteLine($"ROW CHECK FAIL: " + x);
                         return false;
                     }
                     if (!used.Add(Table[x, y])) {
@@ -66,6 +67,7 @@ namespace Exercise2_Sudoku {
                 for (int x = 0; x < N2; x++) {
 
                     if (!used.Add(Table[x, y])) {
+                        Console.WriteLine($"COL CHECK FAIL: " + y);
                         return false;
                     }
                 }
@@ -77,7 +79,7 @@ namespace Exercise2_Sudoku {
 
                 for (int gridX = 0; gridX < N; gridX++) {
                     for (int gridY = 0; gridY < N; gridY++) {
-
+                        Console.WriteLine($"GRID CHECK FAIL: " + grid);
                         FromGridIndex(grid, gridX, gridY, out int x, out int y);
                         if (!used.Add(Table[x, y])) {
                             return false;
@@ -86,7 +88,7 @@ namespace Exercise2_Sudoku {
                 }
             }
 
-            return false;
+            return true;
         }
 
         public override string ToString() {

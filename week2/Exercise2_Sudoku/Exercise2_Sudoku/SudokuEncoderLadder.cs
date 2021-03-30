@@ -41,6 +41,9 @@ namespace Exercise2_Sudoku {
             AtLeastOneInRowAndColumn();
             AtMostInOneRow_Ladder();
             AtMostInOneCol_Ladder();
+
+            AtLeastOnePerCell();
+            AtMostOnePerCell();
         }
 
         private void AtLeastOneInRowAndColumn() {
@@ -61,17 +64,11 @@ namespace Exercise2_Sudoku {
             for (int i = 0; i < sudoku.N2; i++) {
                 for (int val = 0; val < sudoku.N2; val++) {
 
-                    for (int j = 1; j < sudoku.N2; j++) {
+                    for (int j = 1; j < sudoku.N2 - 1; j++) {
                         int row_xi = VarIndex(i, j, val);
                         int row_yi = trueVarCount + ladderVarCount + j;
 
-                        // y[i] -> y[i-1]
-                        AddClause(-row_yi, row_yi - 1);
-
-                        // x[k] <=> (y[i-1] && !y[i])
-                        AddClause(row_xi, -(row_yi - 1), row_yi);
-                        AddClause(-row_xi, row_yi - 1);
-                        AddClause(-row_xi, -row_yi);
+                        AddLadderConstraint(row_xi, row_yi);
                     }
 
                     ladderVarCount += sudoku.N2 - 1;
@@ -84,23 +81,52 @@ namespace Exercise2_Sudoku {
             for (int j = 0; j < sudoku.N2; j++) {
                 for (int val = 0; val < sudoku.N2; val++) {
 
-                    for (int i = 1; i < sudoku.N2; i++) {
+                    for (int i = 1; i < sudoku.N2 - 1; i++) {
                         int col_xi = VarIndex(i, j, val);
                         int col_yi = trueVarCount + ladderVarCount + j;
 
-                        // y[i] -> y[i-1]
-                        AddClause(-col_yi, col_yi - 1);
-
-                        // x[k] <=> (y[i-1] && !y[i])
-                        AddClause(col_xi, -(col_yi - 1), col_yi);
-                        AddClause(-col_xi, col_yi - 1);
-                        AddClause(-col_xi, -col_yi);
+                        AddLadderConstraint(col_xi, col_yi);
                     }
 
                     ladderVarCount += sudoku.N2 - 1;
                 }
             }
         }
+
+        private void AtMostOnePerCell() {
+            for (int row = 0; row < sudoku.N2; row++) {
+                for (int col = 0; col < sudoku.N2; col++) {
+
+                    List<int> clause = new List<int>();
+
+                    for (int val = 1; val < sudoku.N2 - 1; val++) {
+                        clause.Add(VarIndex(row, col, val));
+
+                        int xi = VarIndex(row, col, val);
+                        int yi = trueVarCount + ladderVarCount + val;
+
+                        AddLadderConstraint(xi, yi);
+                    }
+
+                    ladderVarCount += sudoku.N2 - 1;
+                    AddClause(clause.ToArray());
+                }
+            }
+        }
+
+        private void AtLeastOnePerCell() {
+            for (int row = 0; row < sudoku.N2; row++) {
+                for (int col = 0; col < sudoku.N2; col++) {
+                    List<int> clause = new List<int>();
+                    for (int val = 0; val < sudoku.N2; val++) {
+                        clause.Add(VarIndex(row, col, val));
+                    }
+                    AddClause(clause.ToArray());
+                }
+            }
+        }
+
+        
         #endregion
 
         #region grid
@@ -131,20 +157,14 @@ namespace Exercise2_Sudoku {
             for (int grid = 0; grid < sudoku.N2; grid++) {
                 for (int val = 0; val < sudoku.N2; val++) {
 
-                    for (int gridPos = 1; gridPos < sudoku.N2; gridPos++) {
+                    for (int gridPos = 1; gridPos < sudoku.N2 - 1; gridPos++) {
                         int gridX = gridPos / sudoku.N;
                         int gridY = gridPos % sudoku.N;
 
                         int xi = VarGridIndex(grid, gridX, gridY, val);
                         int yi = trueVarCount + ladderVarCount + gridPos;
 
-                        // y[i] -> y[i-1]
-                        AddClause(-yi, yi - 1);
-
-                        // x[k] <=> (y[i-1] && !y[i])
-                        AddClause(xi, -(yi - 1), yi);
-                        AddClause(-xi, yi - 1);
-                        AddClause(-xi, -yi);
+                        AddLadderConstraint(xi, yi);
                     }
 
                     ladderVarCount += sudoku.N2 - 1;
@@ -165,6 +185,15 @@ namespace Exercise2_Sudoku {
             int trueY = gridY * sudoku.N + y;
 
             return VarIndex(trueX, trueY, val);
+        }
+        private void AddLadderConstraint(int xi, int yi) {
+            // y[i] -> y[i-1]
+            AddClause(-yi, yi - 1);
+
+            // x[k] <=> (y[i-1] && !y[i])
+            AddClause(xi, -(yi - 1), yi);
+            AddClause(-xi, yi - 1);
+            AddClause(-xi, -yi);
         }
         #endregion
     }

@@ -40,7 +40,7 @@ namespace Exercise2_Sudoku {
             // Methods separated for clarity, could combine loops for optimal performance
             AtLeastOneInRowAndColumn();
             AtMostOneInRowAndCol_Pairwise();
-            ExactlyOnePerCell();
+            ExactlyOnePerCell_Pairwise();
         }
 
 
@@ -77,7 +77,7 @@ namespace Exercise2_Sudoku {
             }
         }
 
-        private void ExactlyOnePerCell() {
+        private void ExactlyOnePerCell_Pairwise() {
             for (int row = 0; row < sudoku.N2; row++) {
                 for (int col = 0; col < sudoku.N2; col++) {
 
