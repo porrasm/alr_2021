@@ -16,12 +16,6 @@ namespace Exercise2_Sudoku {
         private static Sudoku[] sudokus;
 
         static void Main(string[] args) {
-
-            Sudoku test = new Sudoku(3);
-            test[0, 0] = 1;
-
-            Console.ReadLine();
-            return;
             Encode();
             Decode();
             Console.ReadLine();

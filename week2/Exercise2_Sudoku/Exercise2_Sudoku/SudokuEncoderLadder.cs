@@ -63,7 +63,7 @@ namespace Exercise2_Sudoku {
 
                     for (int j = 1; j < sudoku.N2; j++) {
                         int row_xi = VarIndex(i, j, val);
-                        int row_yi = ladderVarCount + j;
+                        int row_yi = trueVarCount + ladderVarCount + j;
 
                         // y[i] -> y[i-1]
                         AddClause(-row_yi, row_yi - 1);
@@ -86,7 +86,7 @@ namespace Exercise2_Sudoku {
 
                     for (int i = 1; i < sudoku.N2; i++) {
                         int col_xi = VarIndex(i, j, val);
-                        int col_yi = ladderVarCount + j;
+                        int col_yi = trueVarCount + ladderVarCount + j;
 
                         // y[i] -> y[i-1]
                         AddClause(-col_yi, col_yi - 1);
@@ -136,7 +136,7 @@ namespace Exercise2_Sudoku {
                         int gridY = gridPos % sudoku.N;
 
                         int xi = VarGridIndex(grid, gridX, gridY, val);
-                        int yi = ladderVarCount + gridPos;
+                        int yi = trueVarCount + ladderVarCount + gridPos;
 
                         // y[i] -> y[i-1]
                         AddClause(-yi, yi - 1);
