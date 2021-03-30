@@ -43,7 +43,7 @@ namespace Exercise2_Sudoku {
             //AtMostInOneCol_Ladder();
 
             AtLeastOnePerCell();
-            //AtMostOnePerCell();
+            AtMostOnePerCell();
         }
 
         private void AtLeastOneInRowAndColumn() {
