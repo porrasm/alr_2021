@@ -39,7 +39,7 @@ namespace Exercise2_Sudoku {
         private void AddRowAndColumnConstraints() {
             // Methods separated for clarity, could combine loops for optimal performance
             AtLeastOneInRowAndColumn();
-            //AtMostInOneRow_Ladder();
+            AtMostInOneRow_Ladder();
             //AtMostInOneCol_Ladder();
 
             AtLeastOnePerCell();
