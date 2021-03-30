@@ -40,7 +40,7 @@ namespace Exercise2_Sudoku {
             // Methods separated for clarity, could combine loops for optimal performance
             AtLeastOneInRowAndColumn();
             AtMostOneInRowAndCol_Pairwise();
-            // ExactlyOnePerCell_Pairwise();
+            ExactlyOnePerCell_Pairwise();
         }
 
 
@@ -114,15 +114,15 @@ namespace Exercise2_Sudoku {
             for (int grid = 0; grid < sudoku.N2; grid++) {
                 for (int val = 0; val < sudoku.N2; val++) {
 
-                    int[] clause = new int[sudoku.N2];
+                    List<int> clause = new List<int>();
 
                     for (int i = 0; i < sudoku.N; i++) {
                         for (int j = 0; j < sudoku.N; j++) {
-                            clause[i * sudoku.N + j] = VarGridIndex(grid, i, j, val);
+                            clause.Add(VarGridIndex(grid, i, j, val));
                         }
                     }
 
-                    AddClause(clause);
+                    AddClause(clause.ToArray());
                 }
             }
         }
