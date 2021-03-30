@@ -40,7 +40,7 @@ namespace Exercise2_Sudoku {
             // Methods separated for clarity, could combine loops for optimal performance
             AtLeastOneInRowAndColumn();
             AtMostOneInRowAndCol_Pairwise();
-            ExactlyOnePerCell_Pairwise();
+            // ExactlyOnePerCell_Pairwise();
         }
 
 
@@ -54,6 +54,9 @@ namespace Exercise2_Sudoku {
                         rowClause[col] = VarIndex(row, col, val);
                         colClause[col] = VarIndex(col, row, val);
                     }
+
+                    AddClause(rowClause);
+                    AddClause(colClause);
                 }
             }
         }

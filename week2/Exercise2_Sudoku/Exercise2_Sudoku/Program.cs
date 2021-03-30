@@ -68,7 +68,7 @@ namespace Exercise2_Sudoku {
             for (int i = 0; i < resultFiles.Length; i++) {
                 Console.WriteLine("--------------------------------------------------------------");
 
-                if (!resultFiles[i].Contains("9x9") || !resultFiles[i].Contains("ladder")) {
+                if (!resultFiles[i].Contains("9x9") || resultFiles[i].Contains("ladder")) {
                     continue;
                 }
 
