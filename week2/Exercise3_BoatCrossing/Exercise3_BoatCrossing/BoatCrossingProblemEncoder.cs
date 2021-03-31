@@ -37,10 +37,17 @@ namespace Exercise3_BoatCrossing {
         }
 
         private void AddFixedConstraints() {
+            // Init state
             AddClause(-GetVariable(Object.Rabbit, 0));
             AddClause(-GetVariable(Object.Wolf, 0));
             AddClause(-GetVariable(Object.Carrots, 0));
             AddClause(-GetVariable(Object.Boat, 0));
+
+            // Goal state
+            AddClause(GetVariable(Object.Rabbit, k));
+            AddClause(GetVariable(Object.Wolf, k));
+            AddClause(GetVariable(Object.Carrots, k));
+            AddClause(GetVariable(Object.Boat, k));
         }
 
         private void AddStateConstraints() {
