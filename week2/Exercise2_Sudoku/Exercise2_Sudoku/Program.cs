@@ -68,7 +68,7 @@ namespace Exercise2_Sudoku {
             for (int i = 0; i < resultFiles.Length; i++) {
                 Console.WriteLine("--------------------------------------------------------------");
 
-                if (!resultFiles[i].Contains("9x9") || !resultFiles[i].Contains("ladder")) {
+                if (resultFiles[i].Contains("ladder")) {
                     continue;
                 }
 
@@ -86,19 +86,19 @@ namespace Exercise2_Sudoku {
 
                 Console.WriteLine($"    Pairwise encoding size : ({sudoku.Pairwise.VariableCount}, {sudoku.Pairwise.Sentence.Count})");
                 Console.WriteLine($"    Ladder encoding size   : ({sudoku.Ladder.VariableCount}, {sudoku.Ladder.Sentence.Count})");
-                Console.WriteLine($"    Sudoku solve time      : {nanos / 1000} milliseconds");
+                Console.WriteLine($"    Sudoku solve time      : {nanos / 1000000} milliseconds");
 
-                Console.WriteLine("\nOriginal sudoku:");
-                Console.WriteLine(sudoku.Sudoku);
+                //Console.WriteLine("\nOriginal sudoku:");
+                //Console.WriteLine(sudoku.Sudoku);
 
                 Sudoku solved = GetSudokuFromResult(sudoku.Sudoku, lines);
-                Console.WriteLine("\nSolved sudoku:");
-                Console.WriteLine(solved);
+                //Console.WriteLine("\nSolved sudoku:");
+                //Console.WriteLine(solved);
 
                 Console.WriteLine("\n");
 
                 Console.WriteLine("--------------------------------------------------------------");
-                break;
+                // break;
             }
         }
 
@@ -128,7 +128,7 @@ namespace Exercise2_Sudoku {
 
         private static void SetSudokuValue(Sudoku sudoku, int var) {
             SetIndices(sudoku.N2, var, out int x, out int y, out int value);
-            Console.WriteLine($"{var} -> ({x}, {y}) = {value+1}");
+            // Console.WriteLine($"{var} -> ({x}, {y}) = {value+1}");
             sudoku.Table[x, y] = value + 1;
         }
 
