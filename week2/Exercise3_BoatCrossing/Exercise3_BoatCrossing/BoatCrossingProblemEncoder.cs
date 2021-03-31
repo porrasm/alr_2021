@@ -32,6 +32,7 @@ namespace Exercise3_BoatCrossing {
         private void AddConstraints() {
             AddFixedConstraints();
             AddStateConstraints();
+            AllowMovementOnlyFromBoatSide();
             AddBoatConstraints();
             AddTransitionConstraints();
         }
@@ -68,6 +69,20 @@ namespace Exercise3_BoatCrossing {
             }
         }
 
+        private void AllowMovementOnlyFromBoatSide() {
+            for (int t = 0; t < k; t++) {
+                for (int o = 0; o < (int)Object.Boat; o++) {
+
+                    int xot = GetVariable(o, t);
+                    int xot1 = GetVariable(o, t + 1);
+                    int xbt = GetVariable(Object.Boat, t);
+
+                    AddClause(xot, -xot1, -xbt);
+                    AddClause(-xot, xot1, xbt);
+                }
+            }
+        }
+
         private void AddBoatConstraints() {
             for (int t = 0; t < k; t++) {
 
@@ -93,9 +108,6 @@ namespace Exercise3_BoatCrossing {
 
                 int c0 = GetVariable(Object.Carrots, t);
                 int c1 = GetVariable(Object.Carrots, t + 1);
-
-                int b0 = GetVariable(Object.Boat, t);
-                int b1 = GetVariable(Object.Boat, t + 1);
 
                 AddClause(-r1, r0, -w1, w0);
                 AddClause(-r0, r1, -w1, w0);
