@@ -20,7 +20,7 @@ namespace CNFSolver {
 
             string[] lines = File.ReadAllLines(path);
 
-            Console.WriteLine("Read " + lines.Length + " lines");
+            Log("Read " + lines.Length + " lines");
 
             int i;
             for (i = 0; i < lines.Length; i++) {
@@ -29,14 +29,17 @@ namespace CNFSolver {
                 }
             }
 
-            string[] opts = lines[i].Split(' ');
+            string[] opts = lines[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             VariableCount = int.Parse(opts[2]);
             int clauseCount = int.Parse(opts[3]);
             i++;
 
             List<int> currentClause = new List<int>();
             for (; i < lines.Length; i++) {
-                foreach (int val in lines[i].Split(' ').Select(o => int.Parse(o))) {
+                foreach (int val in lines[i]
+                    .Trim()
+                    .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(o => int.Parse(o))) {
                     if (val == 0) {
                         clauseList.Add(currentClause);
                         currentClause = new List<int>();
@@ -60,5 +63,9 @@ namespace CNFSolver {
         }
 
         public abstract bool Solve();
+
+        protected void Log(string message) {
+            Console.WriteLine(message);
+        }
     }
 }

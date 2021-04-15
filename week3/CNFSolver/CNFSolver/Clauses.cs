@@ -11,6 +11,7 @@ namespace CNFSolver {
         private Stack<Action> counterOperations;
         private Stack<int> checkpoints;
         public int ClauseCount { get; private set; }
+        public int CheckPointLevel => checkpoints.Count;
         #endregion
 
         public Clauses(List<List<int>> initialState) {
@@ -31,12 +32,21 @@ namespace CNFSolver {
             checkpoints.Clear();
             RevertToLastCheckpoint();
         }
-        public void RevertToLastCheckpoint() {
-            int cp = checkpoints.Count == 0 ? 0 : checkpoints.Pop();
+        public void RevertToLevel(int level) {
+            int cp = 0;
+            if (level >= CheckPointLevel) {
+                throw new Exception("Cant revert to current level or up");
+            }
+            while (CheckPointLevel > level && checkpoints.Count > 0) {
+                cp = checkpoints.Pop();
+            }
             int revertCount = counterOperations.Count - cp;
             for (int i = 0; i < revertCount; i++) {
                 counterOperations.Pop()();
             }
+        }
+        public void RevertToLastCheckpoint() {
+            RevertToLevel(CheckPointLevel - 1);
         }
 
         #region modifiers

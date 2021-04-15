@@ -6,14 +6,18 @@ using System.Threading.Tasks;
 
 namespace CNFSolver {
 
-    public class UnitClauseAppearances {
+    public class UnitClause {
         public int Index;
         public int Value = 0;
         public int Sign => Value > 0 ? 1 : -1;
-        public UnitClauseAppearances(int variable, int value) {
+        public UnitClause(int variable, int value) {
             Index = variable;
             this.Value = value;
         }
+    }
+
+    public class BranchingHeuristic {
+
     }
 
     public class DPLLSolver : SatSolver {
@@ -27,14 +31,13 @@ namespace CNFSolver {
         private List<int>[] variableAppearances;
         #endregion
 
-
-
         #region solve
         public override bool Solve() {
             variables = new RList<int>(new List<int>(new int[VariableCount + 1]));
             clauses = new Clauses(clauseList);
             SetVariableAppearances();
 
+            return DPLLIterative();
             return DPLL();
         }
         private void SetVariableAppearances() {
@@ -51,31 +54,92 @@ namespace CNFSolver {
             }
         }
 
+        private struct ClauseBranch {
+            public int Clause;
+            public int RevertLevel;
+
+            public ClauseBranch(int clause, int revertLevel) {
+                Clause = clause;
+                RevertLevel = revertLevel;
+            }
+        }
+        private bool DPLLIterative() {
+
+            Stack<ClauseBranch> clauseStack = new Stack<ClauseBranch>();
+
+            while (true) {
+
+                PrintState();
+
+                Log("Clause stack: " + clauseStack.Count);
+                if (clauseStack.Count > 0) {
+                    Log("Applying branch: " + clauseStack.Peek());
+                    Checkpoint();
+                    clauses.AddClause(clauseStack.Pop().Clause);
+                }
+                Log("DPLL Iteration CLAUSE COUNT: " + clauses.ClauseCount);
+
+                RunUnitPropagation();
+
+                if (CheckUnsatisfiability()) {
+                    Log("UNSATISFIABLE, returning");
+                    PrintState();
+
+                    if (clauseStack.Count == 0) {
+                        return false;
+                    }
+
+                    Backtrack(clauseStack.Peek().RevertLevel);
+
+                    
+
+                    // ?
+                    continue;
+                }
+                if (CheckSatisfiability()) {
+                    Log("SATISFIABLE, returning");
+                    PrintState();
+                    // forget backtrack history and just return 
+                    variables.Forget();
+                    clauses.Forget();
+                    return true;
+                }
+
+                int literal = SelectLiteral();
+                Log("Branching on: " + literal);
+                if (literal == 0) {
+                    throw new Exception("Literal was 0");
+                }
+                clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
+                clauseStack.Push(new ClauseBranch(literal, variables.CheckPointLevel));
+            }
+        }
+
         private bool DPLL() {
 
-            Console.WriteLine("DPLL");
+            Log("DPLL Iteration CLAUSE COUNT: " + clauses.ClauseCount);
             PrintState();
 
             Checkpoint();
             RunUnitPropagation();
 
             if (CheckUnsatisfiability()) {
-                Console.WriteLine("UNSATISFIABLE, returning");
+                Log("UNSATISFIABLE, returning");
                 PrintState();
                 Backtrack();
                 return false;
             }
             if (CheckSatisfiability()) {
-                Console.WriteLine("SATISFIABLE, returning");
+                Log("SATISFIABLE, returning");
                 PrintState();
                 // forget backtrack history and just return 
                 variables.Forget();
                 return true;
             }
-            
+
 
             int literal = SelectLiteral();
-            Console.WriteLine("Branching on: " + literal);
+            Log("Branching on: " + literal);
 
             // Assign literal = 1
 
@@ -88,17 +152,17 @@ namespace CNFSolver {
         private bool ContinueDPLL(int literal, int assignment) {
             Checkpoint();
             clauses.AddClause(literal * assignment);
-            Console.WriteLine($"Branching on {literal} with value = {assignment}");
+            Log($"Branching on {literal} with value = {assignment}");
             bool result = DPLL();
             Backtrack();
             return result;
         }
         #endregion
-  
+
         #region satisfiability
         private bool CheckSatisfiability() {
             if (clauses.ClauseCount == 0) {
-                Console.WriteLine("NO CLAUSES");
+                Log("NO CLAUSES");
                 return true;
             }
             for (int i = 0; i < clauses.List.Count; i++) {
@@ -106,22 +170,22 @@ namespace CNFSolver {
                 if (clause == null) {
                     continue;
                 }
-                Console.WriteLine("Checking clause:");
+                Log("Checking clause:");
                 Program.PrintList(clause);
 
                 // Check if any clause is UNSAT
                 if (!ClauseIsSatisfied(clause)) {
-                    Console.WriteLine("Was not satisfied");
+                    Log("Was not satisfied");
                     PrintState();
                     return false;
                 } else {
-                    Console.WriteLine("Was satisfied");
+                    Log("Was satisfied");
                 }
             }
 
             return true;
             // Contains no clauses
-            Console.WriteLine("Check SAT, clauses: " + clauses.List.Count);
+            Log("Check SAT, clauses: " + clauses.List.Count);
             return clauses.List.Count == 0;
         }
         private bool ClauseIsSatisfied(List<int> clause) {
@@ -163,9 +227,9 @@ namespace CNFSolver {
             }
         }
 
-        private void UnitPropagateOnNew(UnitClauseAppearances unit) {
+        private void UnitPropagateOnNew(UnitClause unit) {
 
-            Console.WriteLine("Unit propagating on: " + unit.Index);
+            Log("Unit propagating on: " + unit.Index);
             var clausesWithLit = variableAppearances[unit.Index];
             variables[unit.Index] = unit.Sign;
 
@@ -186,11 +250,11 @@ namespace CNFSolver {
                     }
                 }
             }
-            Console.WriteLine("FINISH PROPAGATE ON: " + unit.Index);
+            Log("FINISH PROPAGATE ON: " + unit.Index);
             PrintState();
         }
 
-        private UnitClauseAppearances GetVariableToPropagate() {
+        private UnitClause GetVariableToPropagate() {
             int iMax = clauses.List.Count;
             for (int cl = 0; cl < iMax; cl++) {
                 if (clauses.List[cl] == null) {
@@ -202,7 +266,7 @@ namespace CNFSolver {
                     int index = GetVar(value);
 
                     if (variables[index] == 0 && clauses.List[cl].Count == 1) {
-                        UnitClauseAppearances u = new UnitClauseAppearances(index, value);
+                        UnitClause u = new UnitClause(index, value);
                         return u;
                     }
                 }
@@ -214,6 +278,53 @@ namespace CNFSolver {
 
         #region heuristic
         private int SelectLiteral() {
+
+            //Dictionary<int, List<int>> clausesByLen = new Dictionary<int, List<int>>();
+
+            //int minClauseLength = int.MaxValue;
+            //for (int i = 0; i < clauses.List.Count; i++) {
+            //    if (clauses.List[i] == null) {
+            //        continue;
+            //    }
+            //    int count = clauses.List[i].Count;
+            //    if (count > 1 && count < minClauseLength) {
+            //        minClauseLength = count;
+            //    }
+            //}
+            //Console.WriteLine("Min length: " + minClauseLength);
+
+
+
+            // most common literal
+            Dictionary<int, int> literalCounts = new Dictionary<int, int>();
+            for (int i = 0; i < clauses.List.Count; i++) {
+                if (clauses.List[i] == null) {
+                    continue;
+                }
+                //if (clauses.List[i].Count != minClauseLength) {
+                //    continue;
+                //}
+                foreach (int literal in clauses.List[i]) {
+                    int var = GetVar(literal);
+                    if (!literalCounts.ContainsKey(var)) {
+                        literalCounts.Add(var, 1);
+                    } else {
+                        literalCounts[var]++;
+                    }
+                }
+            }
+
+            KeyValuePair<int, int> max = default;
+            foreach (var pair in literalCounts) {
+                if (pair.Value > max.Value) {
+                    max = pair;
+                }
+            }
+            if (max.Key == 0) {
+                throw new Exception("No literal found");
+            }
+            return max.Key;
+
             // select first unassigned
             for (int i = 1; i < VariableCount + 1; i++) {
                 if (variables[i] == 0) {
@@ -226,17 +337,21 @@ namespace CNFSolver {
 
         #region utility
         private void Checkpoint() {
-            Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             variables.CreateCheckpoint();
             clauses.CreateCheckpoint();
         }
         private void Backtrack() {
-            Console.WriteLine("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-            variables.RevertToLastCheckpoint();
-            clauses.RevertToLastCheckpoint();
+            Backtrack(variables.CheckPointLevel - 1);
+        }
+        private void Backtrack(int targeLevel) {
+            Log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+            variables.RevertToLevel(targeLevel);
+            clauses.RevertToLevel(targeLevel);
         }
 
         public void PrintState() {
+            return;
             StringBuilder b = new StringBuilder();
             b.AppendLine("-----------------------------------");
             b.AppendLine("Clauses:");
@@ -254,13 +369,13 @@ namespace CNFSolver {
             b.AppendLine();
             if (variables != null) {
                 b.AppendLine("Literals:");
-                for (int i = 1; i < VariableCount + 1; i++) {
+                for (int i = 1; i < variables.List.Count; i++) {
                     b.AppendLine($"Literal {i} = {variables[i]}");
                 }
             }
             b.AppendLine("-----------------------------------");
 
-            Console.WriteLine(b.ToString());
+            Log(b.ToString());
         }
         #endregion
 
