@@ -17,19 +17,14 @@ namespace CNFSolver {
             if (args.Length == 0) {
                 solver = new DPLLSolver();
                 //SolveSatInstance("P:/Stuff/School/alr_2021/week3/CNFSolver/CNFSolver/example.cnf");
-                SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week2_boat/k7.cnf");
+                //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week2_boat/k7.cnf");
+                SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf20-0100.cnf");
             } else if (args.Length == 2) {
                 if (args[0] == "dpll" || true) {
                     solver = new DPLLSolver();
                 }
                 if (Directory.Exists(args[1])) {
-                    foreach (string file in Directory.GetFiles(args[1])) {
-                        if (file.Contains("bmc") || file.Contains("hole")) {
-                            Console.WriteLine("Skipping: " + file);
-                            continue;
-                        }
-                        SolveSatInstance(file);
-                    }
+                    SolveDir(args[1]);
                 }
             }
             Console.ReadLine();
@@ -46,6 +41,15 @@ namespace CNFSolver {
             Console.WriteLine("-----------------------------------");
         }
 
+        private static void SolveDir(string dir) {
+            foreach (string file in Directory.GetFiles(dir)) {
+                if (file.Contains("bmc") || file.Contains("hole")) {
+                    Console.WriteLine("Skipping: " + file);
+                    continue;
+                }
+                SolveSatInstance(file);
+            }
+        }
         private static void SolveSatInstance(string instance) {
             Console.WriteLine("Loading problem: " + instance);
             solver.LoadProblem(instance);

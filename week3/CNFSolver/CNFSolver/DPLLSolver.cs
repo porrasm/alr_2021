@@ -6,120 +6,6 @@ using System.Threading.Tasks;
 
 namespace CNFSolver {
 
-    public class UnitClause {
-        public int Index;
-        public int Value = 0;
-        public int Sign => Value > 0 ? 1 : -1;
-        public UnitClause(int variable, int value) {
-            Index = variable;
-            this.Value = value;
-        }
-    }
-
-    public class BranchingHeuristic {
-        private struct Key : IEquatable<Key> {
-            public int ClauseLength;
-            public int Variable;
-
-            public Key(int clauseLength, int variable) {
-                ClauseLength = clauseLength;
-                Variable = variable;
-            }
-
-            public override bool Equals(object obj) {
-                return obj is Key key && Equals(key);
-            }
-
-            public bool Equals(Key other) {
-                return Variable == other.Variable;
-            }
-
-            public override int GetHashCode() {
-                return 410573293 + Variable.GetHashCode();
-            }
-
-            public static bool operator ==(Key left, Key right) {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(Key left, Key right) {
-                return !(left == right);
-            }
-        }
-
-        private Clauses clauses;
-        private RList<int> variables;
-
-        Dictionary<Key, int> varCount = new Dictionary<Key, int>();
-
-        public BranchingHeuristic(Clauses clauses, RList<int> variables) {
-            this.clauses = clauses;
-            this.variables = variables;
-        }
-
-        public int GetVariableToBranchOn() {
-            // select first unassigned
-            for (int i = 1; i < variables.List.Count; i++) {
-                if (variables[i] == 0) {
-                    return i;
-                }
-            }
-            return 0;
-
-
-            InitVarCounts();
-
-            int var = 0;
-            int maxCount = 0;
-
-            foreach (var pair in varCount) {
-                if (pair.Value > maxCount) {
-                    maxCount = pair.Value;
-                    var = pair.Key.Variable;
-                }
-            }
-
-            if (var == 0) {
-                Console.WriteLine($"VarCOunts: " + varCount.Count + ", clauseCount: " + clauses.ClauseCount);
-                //throw new Exception("Branch var not found");
-            }
-
-            return var;
-        }
-
-        private void InitVarCounts() {
-            varCount.Clear();
-            for (int c = 0; c < clauses.List.Count; c++) {
-                if (clauses.List[c] == null) {
-                    continue;
-                }
-
-                int len = clauses.List[c].Count;
-                if (len < 2) {
-                    continue;
-                }
-
-                Console.WriteLine("Valid clause: " + len);
-
-                foreach (int variable in clauses.List[c]) {
-
-                    Key key = new Key(len, SatSolver.GetVar(variable));
-
-                    if (variables[key.Variable] != 0) {
-                        continue;
-                    }
-
-                    Console.WriteLine("Valid var: " + key.Variable);
-
-                    if (varCount.ContainsKey(key)) {
-                        varCount[key]++;
-                    } else {
-                        varCount.Add(key, 1);
-                    }
-                }
-            }
-        }
-    }
 
     public class DPLLSolver : SatSolver {
 
@@ -140,8 +26,8 @@ namespace CNFSolver {
             heuristic = new BranchingHeuristic(clauses, variables);
             SetVariableAppearances();
 
-            //return DPLLIterative();
-            return DPLL();
+            return DPLLIterative();
+            //return DPLL();
         }
         private void SetVariableAppearances() {
             variableAppearances = new List<int>[VariableCount + 1];
@@ -210,9 +96,11 @@ namespace CNFSolver {
                 if (literal == 0) {
                     Log("No var found");
                     PrintState(false);
+                    Backtrack(clauseStack.Peek().RevertLevel);
                     continue;
-                    throw new Exception("Literal was 0");
+                    throw new Exception("Cant branch on 0");
                 }
+
                 clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
                 clauseStack.Push(new ClauseBranch(literal, variables.CheckPointLevel));
             }
@@ -250,6 +138,11 @@ namespace CNFSolver {
 
 
             int literal = heuristic.GetVariableToBranchOn();
+            if (literal == 0) {
+                PrintState(true);
+                throw new Exception("Cant branch on 0");
+            }
+
             Log("Branching on: " + literal);
 
             // Assign literal = 1
@@ -376,6 +269,11 @@ namespace CNFSolver {
                     int value = clauses[cl, li];
                     int index = GetVar(value);
 
+                    if (index == 0) {
+                        Console.WriteLine("WATTEFAK: index: " + index + ", value: " + value + ", clause: " + cl + ", li: " + li);
+                        throw new Exception("INDEX WAS 0 WTF");
+                    }
+
                     if (variables[index] == 0 && clauses.List[cl].Count == 1) {
                         UnitClause u = new UnitClause(index, value);
                         return u;
@@ -435,4 +333,120 @@ namespace CNFSolver {
         #endregion
 
     }
+
+    public class UnitClause {
+        public int Index;
+        public int Value = 0;
+        public int Sign => Value > 0 ? 1 : -1;
+        public UnitClause(int variable, int value) {
+            Index = variable;
+            this.Value = value;
+        }
+    }
+
+    public class BranchingHeuristic {
+        private struct Key : IEquatable<Key> {
+            public int ClauseLength;
+            public int Variable;
+
+            public Key(int clauseLength, int variable) {
+                ClauseLength = clauseLength;
+                Variable = variable;
+            }
+
+            public override bool Equals(object obj) {
+                return obj is Key key && Equals(key);
+            }
+
+            public bool Equals(Key other) {
+                return Variable == other.Variable;
+            }
+
+            public override int GetHashCode() {
+                return 410573293 + Variable.GetHashCode();
+            }
+
+            public static bool operator ==(Key left, Key right) {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(Key left, Key right) {
+                return !(left == right);
+            }
+        }
+
+        private Clauses clauses;
+        private RList<int> variables;
+
+        Dictionary<Key, int> varCount = new Dictionary<Key, int>();
+
+        public BranchingHeuristic(Clauses clauses, RList<int> variables) {
+            this.clauses = clauses;
+            this.variables = variables;
+        }
+
+        public int GetVariableToBranchOn() {
+            // select first unassigned
+            for (int i = 1; i < variables.List.Count; i++) {
+                if (variables[i] == 0) {
+                    return i;
+                }
+            }
+            return 0;
+
+
+            InitVarCounts();
+
+            int var = 0;
+            int maxCount = 0;
+
+            foreach (var pair in varCount) {
+                if (pair.Value > maxCount) {
+                    maxCount = pair.Value;
+                    var = pair.Key.Variable;
+                }
+            }
+
+            if (var == 0) {
+                Console.WriteLine($"VarCOunts: " + varCount.Count + ", clauseCount: " + clauses.ClauseCount);
+                //throw new Exception("Branch var not found");
+            }
+
+            return var;
+        }
+
+        private void InitVarCounts() {
+            varCount.Clear();
+            for (int c = 0; c < clauses.List.Count; c++) {
+                if (clauses.List[c] == null) {
+                    continue;
+                }
+
+                int len = clauses.List[c].Count;
+                if (len < 2) {
+                    continue;
+                }
+
+                Console.WriteLine("Valid clause: " + len);
+
+                foreach (int variable in clauses.List[c]) {
+
+                    Key key = new Key(len, SatSolver.GetVar(variable));
+
+                    if (variables[key.Variable] != 0) {
+                        continue;
+                    }
+
+                    Console.WriteLine("Valid var: " + key.Variable);
+
+                    if (varCount.ContainsKey(key)) {
+                        varCount[key]++;
+                    } else {
+                        varCount.Add(key, 1);
+                    }
+                }
+            }
+        }
+    }
+
 }

@@ -65,7 +65,6 @@ namespace CNFSolver {
         public abstract bool Solve();
 
         protected void Log(string message) {
-            return;
             Console.WriteLine(message);
         }
     }
