@@ -58,13 +58,14 @@ namespace CNFSolver {
             clauseList = null;
         }
 
-        protected int GetVar(int value) {
+        public static int GetVar(int value) {
             return value > 0 ? value : -value;
         }
 
         public abstract bool Solve();
 
         protected void Log(string message) {
+            return;
             Console.WriteLine(message);
         }
     }

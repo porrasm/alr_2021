@@ -32,12 +32,13 @@ namespace CNFSolver {
                     }
                 }
             }
-
             Console.ReadLine();
         }
 
-        public static void PrintList(List<int> list) {
-            return;
+        public static void PrintList(List<int> list, bool force = false) {
+            if (!force) {
+                return;
+            }
             Console.WriteLine("-----------------------------------");
             foreach (int val in list) {
                 Console.WriteLine(val);

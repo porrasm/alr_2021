@@ -17,7 +17,108 @@ namespace CNFSolver {
     }
 
     public class BranchingHeuristic {
+        private struct Key : IEquatable<Key> {
+            public int ClauseLength;
+            public int Variable;
 
+            public Key(int clauseLength, int variable) {
+                ClauseLength = clauseLength;
+                Variable = variable;
+            }
+
+            public override bool Equals(object obj) {
+                return obj is Key key && Equals(key);
+            }
+
+            public bool Equals(Key other) {
+                return Variable == other.Variable;
+            }
+
+            public override int GetHashCode() {
+                return 410573293 + Variable.GetHashCode();
+            }
+
+            public static bool operator ==(Key left, Key right) {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(Key left, Key right) {
+                return !(left == right);
+            }
+        }
+
+        private Clauses clauses;
+        private RList<int> variables;
+
+        Dictionary<Key, int> varCount = new Dictionary<Key, int>();
+
+        public BranchingHeuristic(Clauses clauses, RList<int> variables) {
+            this.clauses = clauses;
+            this.variables = variables;
+        }
+
+        public int GetVariableToBranchOn() {
+            // select first unassigned
+            for (int i = 1; i < variables.List.Count; i++) {
+                if (variables[i] == 0) {
+                    return i;
+                }
+            }
+            return 0;
+
+
+            InitVarCounts();
+
+            int var = 0;
+            int maxCount = 0;
+
+            foreach (var pair in varCount) {
+                if (pair.Value > maxCount) {
+                    maxCount = pair.Value;
+                    var = pair.Key.Variable;
+                }
+            }
+
+            if (var == 0) {
+                Console.WriteLine($"VarCOunts: " + varCount.Count + ", clauseCount: " + clauses.ClauseCount);
+                //throw new Exception("Branch var not found");
+            }
+
+            return var;
+        }
+
+        private void InitVarCounts() {
+            varCount.Clear();
+            for (int c = 0; c < clauses.List.Count; c++) {
+                if (clauses.List[c] == null) {
+                    continue;
+                }
+
+                int len = clauses.List[c].Count;
+                if (len < 2) {
+                    continue;
+                }
+
+                Console.WriteLine("Valid clause: " + len);
+
+                foreach (int variable in clauses.List[c]) {
+
+                    Key key = new Key(len, SatSolver.GetVar(variable));
+
+                    if (variables[key.Variable] != 0) {
+                        continue;
+                    }
+
+                    Console.WriteLine("Valid var: " + key.Variable);
+
+                    if (varCount.ContainsKey(key)) {
+                        varCount[key]++;
+                    } else {
+                        varCount.Add(key, 1);
+                    }
+                }
+            }
+        }
     }
 
     public class DPLLSolver : SatSolver {
@@ -25,6 +126,7 @@ namespace CNFSolver {
         #region fields
         private RList<int> variables;
         private Clauses clauses;
+        private BranchingHeuristic heuristic;
 
         public override List<int> GetVariableAssignments => variables.List;
 
@@ -35,9 +137,10 @@ namespace CNFSolver {
         public override bool Solve() {
             variables = new RList<int>(new List<int>(new int[VariableCount + 1]));
             clauses = new Clauses(clauseList);
+            heuristic = new BranchingHeuristic(clauses, variables);
             SetVariableAppearances();
 
-            return DPLLIterative();
+            //return DPLLIterative();
             return DPLL();
         }
         private void SetVariableAppearances() {
@@ -90,9 +193,6 @@ namespace CNFSolver {
                     }
 
                     Backtrack(clauseStack.Peek().RevertLevel);
-
-                    
-
                     // ?
                     continue;
                 }
@@ -105,14 +205,25 @@ namespace CNFSolver {
                     return true;
                 }
 
-                int literal = SelectLiteral();
+                int literal = heuristic.GetVariableToBranchOn();
                 Log("Branching on: " + literal);
                 if (literal == 0) {
+                    Log("No var found");
+                    PrintState(false);
+                    continue;
                     throw new Exception("Literal was 0");
                 }
                 clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
                 clauseStack.Push(new ClauseBranch(literal, variables.CheckPointLevel));
             }
+        }
+        private int SelectLiteral() {
+            for (int i = 1; i < variables.List.Count; i++) {
+                if (variables[i] == 0) {
+                    return i;
+                }
+            }
+            throw new Exception("Literal branch not found");
         }
 
         private bool DPLL() {
@@ -138,7 +249,7 @@ namespace CNFSolver {
             }
 
 
-            int literal = SelectLiteral();
+            int literal = heuristic.GetVariableToBranchOn();
             Log("Branching on: " + literal);
 
             // Assign literal = 1
@@ -276,65 +387,6 @@ namespace CNFSolver {
 
         #endregion
 
-        #region heuristic
-        private int SelectLiteral() {
-
-            //Dictionary<int, List<int>> clausesByLen = new Dictionary<int, List<int>>();
-
-            //int minClauseLength = int.MaxValue;
-            //for (int i = 0; i < clauses.List.Count; i++) {
-            //    if (clauses.List[i] == null) {
-            //        continue;
-            //    }
-            //    int count = clauses.List[i].Count;
-            //    if (count > 1 && count < minClauseLength) {
-            //        minClauseLength = count;
-            //    }
-            //}
-            //Console.WriteLine("Min length: " + minClauseLength);
-
-
-
-            // most common literal
-            Dictionary<int, int> literalCounts = new Dictionary<int, int>();
-            for (int i = 0; i < clauses.List.Count; i++) {
-                if (clauses.List[i] == null) {
-                    continue;
-                }
-                //if (clauses.List[i].Count != minClauseLength) {
-                //    continue;
-                //}
-                foreach (int literal in clauses.List[i]) {
-                    int var = GetVar(literal);
-                    if (!literalCounts.ContainsKey(var)) {
-                        literalCounts.Add(var, 1);
-                    } else {
-                        literalCounts[var]++;
-                    }
-                }
-            }
-
-            KeyValuePair<int, int> max = default;
-            foreach (var pair in literalCounts) {
-                if (pair.Value > max.Value) {
-                    max = pair;
-                }
-            }
-            if (max.Key == 0) {
-                throw new Exception("No literal found");
-            }
-            return max.Key;
-
-            // select first unassigned
-            for (int i = 1; i < VariableCount + 1; i++) {
-                if (variables[i] == 0) {
-                    return i;
-                }
-            }
-            return 0;
-        }
-        #endregion
-
         #region utility
         private void Checkpoint() {
             Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -350,8 +402,11 @@ namespace CNFSolver {
             clauses.RevertToLevel(targeLevel);
         }
 
-        public void PrintState() {
-            return;
+        public void PrintState(bool force = false) {
+            if (!force) {
+                return;
+            }
+
             StringBuilder b = new StringBuilder();
             b.AppendLine("-----------------------------------");
             b.AppendLine("Clauses:");
