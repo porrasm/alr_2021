@@ -1,24 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CNFSolver {
     class Program {
         private static DPLLSolver solver;
         static void Main(string[] args) {
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
+            Thread.CurrentThread.Priority = ThreadPriority.Lowest;
             //TestClauses();
 
             Console.WriteLine("Arg count: " + args.Length);
             //Console.ReadLine();
             //return;
-            if (args.Length == 0) {
+            if (args.Length != 2) {
                 solver = new DPLLSolver();
                 //SolveSatInstance("P:/Stuff/School/alr_2021/week3/CNFSolver/CNFSolver/example.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week2_boat/k7.cnf");
-                SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf20-0100.cnf");
+                //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf20-0100.cnf");
+                //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/bmc-ibm-6.cnf");
+                //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf100-0102.cnf");
+                SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/hole6.cnf");
+                Console.ReadLine();
             } else if (args.Length == 2) {
                 if (args[0] == "dpll" || true) {
                     solver = new DPLLSolver();
@@ -27,10 +35,10 @@ namespace CNFSolver {
                     SolveDir(args[1]);
                 }
             }
-            Console.ReadLine();
         }
 
         public static void PrintList(List<int> list, bool force = false) {
+            return;
             if (!force) {
                 return;
             }
@@ -41,38 +49,74 @@ namespace CNFSolver {
             Console.WriteLine("-----------------------------------");
         }
 
-        private static void SolveDir(string dir) {
+        private static async void SolveDir(string dir) {
             foreach (string file in Directory.GetFiles(dir)) {
-                if (file.Contains("bmc") || file.Contains("hole")) {
-                    Console.WriteLine("Skipping: " + file);
-                    continue;
-                }
+                //if (file.Contains("bmc") || file.Contains("hole")) {
+                //    Console.WriteLine("Skipping: " + file);
+                //    continue;
+                //}
                 SolveSatInstance(file);
             }
         }
         private static void SolveSatInstance(string instance) {
-            Console.WriteLine("Loading problem: " + instance);
+            Console.WriteLine("\nSolving problem: " + Path.GetFileName(instance));
             solver.LoadProblem(instance);
-            Console.WriteLine("Loaded problem");
-            Console.WriteLine("Printing problem");
             solver.PrintState();
 
-            Console.WriteLine("Starting solver...");
+            bool res = false;
+            bool finished = false;
+
+            var cancel = new CancellationTokenSource();
+            Thread solveThread = new Thread(() => {
+                Console.WriteLine("Started solve thread");
+                res = solver.Solve();
+                finished = true;
+                cancel.Cancel();
+            });
+            solveThread.Priority = ThreadPriority.Highest;
 
             long time = Timer.Milliseconds;
-            bool res = solver.Solve();
+            solveThread.Start();
+            long passed = 0;
+
+            while ((passed = Timer.PassedFrom(time)) < 120000) {
+                Thread.Sleep(250);
+            }
+
+
             time = Timer.PassedFrom(time);
+            solveThread.Abort();
+
+            if (!finished) {
+                Console.WriteLine("Cancelled by timeout");
+                solveThread.Abort();
+                Console.WriteLine();
+                return;
+            }
 
             Console.WriteLine("Solve status: " + res);
             Console.WriteLine("Solved in " + time + "ms");
             PrintList(solver.GetVariableAssignments);
 
             solver.Clear();
+            Console.WriteLine();
+        }
+
+        private static async Task<bool> Solve(SatSolver solver) {
+            await Task.Yield();
+            return solver.Solve();
+        }
+
+        private Task WrapSolve(Action act) {
+            return Task.Run(() => {
+                Task.Yield();
+                act();
+            });
         }
 
         private static void TestClauses() {
 
-            Clauses clauses = new Clauses(new List<List<int>>() { 
+            Clauses clauses = new Clauses(new List<List<int>>() {
             new List<int>() {1, 2, 3},
             new List<int>() {4, 5, 6},
             new List<int>() {7, 8, 9}

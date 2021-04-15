@@ -70,11 +70,13 @@ namespace CNFSolver {
 
                 RunUnitPropagation();
 
-                if (CheckUnsatisfiability()) {
-                    Log("UNSATISFIABLE, returning");
+                if (HasEmptyClause()) {
+                    Log("BRANCH UNSATISFIABLE, continuing");
                     PrintState();
 
                     if (clauseStack.Count == 0) {
+                        PrintState(true);
+                        Console.WriteLine("NO MORE CLAUSES LEFT; UNSATISFIABLE");
                         return false;
                     }
 
@@ -83,8 +85,8 @@ namespace CNFSolver {
                     continue;
                 }
                 if (CheckSatisfiability()) {
+                    PrintState(true);
                     Log("SATISFIABLE, returning");
-                    PrintState();
                     // forget backtrack history and just return 
                     variables.Forget();
                     clauses.Forget();
@@ -94,9 +96,13 @@ namespace CNFSolver {
                 int literal = heuristic.GetVariableToBranchOn();
                 Log("Branching on: " + literal);
                 if (literal == 0) {
-                    Log("No var found");
+                    Log("--------------------------------------------No var found");
                     PrintState(false);
-                    Backtrack(clauseStack.Peek().RevertLevel);
+                    if (clauseStack.Count == 0) {
+                        Backtrack(clauseStack.Peek().RevertLevel);
+                    } else {
+                        Backtrack();
+                    }
                     continue;
                     throw new Exception("Cant branch on 0");
                 }
@@ -113,54 +119,6 @@ namespace CNFSolver {
             }
             throw new Exception("Literal branch not found");
         }
-
-        private bool DPLL() {
-
-            Log("DPLL Iteration CLAUSE COUNT: " + clauses.ClauseCount);
-            PrintState();
-
-            Checkpoint();
-            RunUnitPropagation();
-
-            if (CheckUnsatisfiability()) {
-                Log("UNSATISFIABLE, returning");
-                PrintState();
-                Backtrack();
-                return false;
-            }
-            if (CheckSatisfiability()) {
-                Log("SATISFIABLE, returning");
-                PrintState();
-                // forget backtrack history and just return 
-                variables.Forget();
-                return true;
-            }
-
-
-            int literal = heuristic.GetVariableToBranchOn();
-            if (literal == 0) {
-                PrintState(true);
-                throw new Exception("Cant branch on 0");
-            }
-
-            Log("Branching on: " + literal);
-
-            // Assign literal = 1
-
-            bool result = ContinueDPLL(literal, 1) || ContinueDPLL(literal, -1);
-
-            // Finish
-            Backtrack();
-            return result;
-        }
-        private bool ContinueDPLL(int literal, int assignment) {
-            Checkpoint();
-            clauses.AddClause(literal * assignment);
-            Log($"Branching on {literal} with value = {assignment}");
-            bool result = DPLL();
-            Backtrack();
-            return result;
-        }
         #endregion
 
         #region satisfiability
@@ -169,6 +127,33 @@ namespace CNFSolver {
                 Log("NO CLAUSES");
                 return true;
             }
+
+            // Polarity check
+            int[] polarities = new int[VariableCount + 1];
+
+            bool polarityCheck = true;
+            for (int i = 0; i < clauses.List.Count; i++) {
+                if (clauses.List[i] == null) {
+                    continue;
+                }
+                foreach (var literal in clauses.List[i]) {
+                    int var = GetVar(literal);
+                    int polarity = literal > 0 ? 1 : -1;
+                    if (polarities[var] == 0) {
+                        polarities[var] = polarity;
+                        continue;
+                    }
+                    if (polarities[var] != polarity) {
+                        polarityCheck = false;
+                    }
+                }
+            }
+
+            if (polarityCheck) {
+                GetSolutionVariablesFromClauses();
+                return true;
+            }
+
             for (int i = 0; i < clauses.List.Count; i++) {
                 var clause = clauses.List[i];
                 if (clause == null) {
@@ -210,7 +195,7 @@ namespace CNFSolver {
             return false;
         }
 
-        private bool CheckUnsatisfiability() {
+        private bool HasEmptyClause() {
             for (int i = 0; i < clauses.List.Count; i++) {
                 if (clauses.List[i] == null) {
                     continue;
@@ -222,7 +207,21 @@ namespace CNFSolver {
             }
             return false;
         }
+
+        private void GetSolutionVariablesFromClauses() {
+            for (int i = 0; i < clauses.List.Count; i++) {
+                if (clauses.List[i] == null) {
+                    continue;
+                }
+                foreach (var literal in clauses.List[i]) {
+                    int var = GetVar(literal);
+                    int polarity = literal > 0 ? 1 : -1;
+                    variables[var] = polarity;
+                }
+            }
+        }
         #endregion
+
 
         #region new unit
         private void RunUnitPropagation() {
@@ -287,7 +286,8 @@ namespace CNFSolver {
 
         #region utility
         private void Checkpoint() {
-            Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to " + (variables.CheckPointLevel + 1));
+            //Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>> Checkpoint level: " + (variables.CheckPointLevel + 1));
             variables.CreateCheckpoint();
             clauses.CreateCheckpoint();
         }
@@ -295,14 +295,16 @@ namespace CNFSolver {
             Backtrack(variables.CheckPointLevel - 1);
         }
         private void Backtrack(int targeLevel) {
-            Log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+            // targeLevel = variables.CheckPointLevel - 1;
+            Log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< to " + targeLevel);
             variables.RevertToLevel(targeLevel);
             clauses.RevertToLevel(targeLevel);
+            //Console.WriteLine("<<<<<<<<<<<<<<<<<<<<<<<< Checkpoint level: target: " + targeLevel + ", actual: " + variables.CheckPointLevel);
         }
 
         public void PrintState(bool force = false) {
             if (!force) {
-                return;
+                //return;
             }
 
             StringBuilder b = new StringBuilder();
@@ -387,13 +389,12 @@ namespace CNFSolver {
 
         public int GetVariableToBranchOn() {
             // select first unassigned
-            for (int i = 1; i < variables.List.Count; i++) {
-                if (variables[i] == 0) {
-                    return i;
-                }
-            }
-            return 0;
-
+            //for (int i = 1; i < variables.List.Count; i++) {
+            //    if (variables[i] == 0) {
+            //        return i;
+            //    }
+            //}
+            //return 0;
 
             InitVarCounts();
 
@@ -405,11 +406,6 @@ namespace CNFSolver {
                     maxCount = pair.Value;
                     var = pair.Key.Variable;
                 }
-            }
-
-            if (var == 0) {
-                Console.WriteLine($"VarCOunts: " + varCount.Count + ", clauseCount: " + clauses.ClauseCount);
-                //throw new Exception("Branch var not found");
             }
 
             return var;
@@ -427,8 +423,6 @@ namespace CNFSolver {
                     continue;
                 }
 
-                Console.WriteLine("Valid clause: " + len);
-
                 foreach (int variable in clauses.List[c]) {
 
                     Key key = new Key(len, SatSolver.GetVar(variable));
@@ -436,8 +430,6 @@ namespace CNFSolver {
                     if (variables[key.Variable] != 0) {
                         continue;
                     }
-
-                    Console.WriteLine("Valid var: " + key.Variable);
 
                     if (varCount.ContainsKey(key)) {
                         varCount[key]++;
