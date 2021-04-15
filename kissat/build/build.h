@@ -1,0 +1,5 @@
+#define VERSION "1.0.3"
+#define COMPILER "gcc (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0 -W -Wall -O3 -DNEMBEDDED -DNDEBUG -DNMETRICS -DNSTATISTICS"
+#define ID "8fca2aa223f0766875773cb6e80b2fb2be03503a"
+#define BUILD "Wed Mar 24 14:35:32 EET 2021 Linux porrasm-VirtualBox 5.4.0-53-generic x86_64"
+#define DIR "/home/porrasm/school/alr_2021/kissat/build"
