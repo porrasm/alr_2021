@@ -36,8 +36,8 @@ namespace CNFSolver {
         }
         public void RevertToLevel(int level) {
             int cp = 0;
-            if (level >= CheckPointLevel) {
-                throw new Exception("Cant revert to current level or up");
+            if (level != 0 && level >= CheckPointLevel) {
+                throw new Exception("Cant revert to current level or up, current level: " + CheckPointLevel + ", target level: " + level);
             }
             while (CheckPointLevel > level && checkpoints.Count > 0) {
                 cp = checkpoints.Pop();

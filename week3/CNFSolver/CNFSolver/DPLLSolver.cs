@@ -22,7 +22,12 @@ namespace CNFSolver {
         #region fields
         private RList<int> variables;
         private Clauses clauses;
-        private List<int> branchingOrder;
+        private BranchingHeuristic heuristic;
+
+        private int iterations;
+
+        private bool unsatisfiable;
+        private bool satisfiable;
 
         public override List<int> GetVariableAssignments => variables.List;
 
@@ -36,13 +41,13 @@ namespace CNFSolver {
 
             variables = new RList<int>(new List<int>(new int[VariableCount + 1]));
             clauses = new Clauses(clauseList);
-            BranchingHeuristic heuristic = new BranchingHeuristic(clauses, variables);
-            branchingOrder = heuristic.GetBranchingOrder();
-            heuristic = null;
+            heuristic = new BranchingHeuristic(clauses, variables);
 
             SetVariableAppearances();
 
-            return DPLLIterative();
+            bool res = DPLLIterative();
+            Console.WriteLine("Completed in " + iterations + " iterations");
+            return res;
             //return DPLL();
         }
         private void SetVariableAppearances() {
@@ -71,25 +76,31 @@ namespace CNFSolver {
         private bool DPLLIterative() {
 
             Stack<ClauseBranch> clauseStack = new Stack<ClauseBranch>();
+            RunInitialUnitPropagation();
 
             while (true) {
+                iterations++;
+
                 Stopwatch iteration = Stopwatch.StartNew();
 
                 PrintState();
 
                 Log("Clause stack: " + clauseStack.Count);
                 if (clauseStack.Count > 0) {
-                    Log("Applying branch: " + clauseStack.Peek());
+                    Log("Applying branch: " + clauseStack.Peek().Clause);
                     Checkpoint();
-                    clauses.AddClause(clauseStack.Pop().Clause);
+                    ClauseBranch clause = clauseStack.Pop();
+                    clauses.AddClause(clause.Clause);
+                    PrepareNewUnitClause(new UnitClause(clause.Clause));
                 }
                 Log("DPLL Iteration CLAUSE COUNT: " + clauses.ClauseCount);
 
                 Stopwatch propagation = Stopwatch.StartNew();
-                RunUnitPropagation();
+
                 propagation.Stop();
 
-                if (HasEmptyClause()) {
+                if (unsatisfiable) {
+                    //if (unsatisfiable) {
                     Log("BRANCH UNSATISFIABLE, continuing");
                     PrintState();
 
@@ -103,7 +114,9 @@ namespace CNFSolver {
                     // ?
                     continue;
                 }
-                if (CheckSatisfiability()) {
+
+                if (satisfiable) {
+                //if (CheckSatisfiability()) {
                     PrintState(true);
                     Log("SATISFIABLE, returning");
                     // forget backtrack history and just return 
@@ -112,7 +125,8 @@ namespace CNFSolver {
                     return true;
                 }
 
-                int literal = SelectLiteral();
+                int literal = heuristic.GetVariableToBranchOn();
+                //int literal = SelectLiteral();
                 Log("Branching on: " + literal);
                 if (literal == 0) {
                     Log("--------------------------------------------No var found");
@@ -126,33 +140,21 @@ namespace CNFSolver {
                     throw new Exception("Cant branch on 0");
                 }
 
-                clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
                 clauseStack.Push(new ClauseBranch(literal, variables.CheckPointLevel));
+                clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
                 iteration.Stop();
-                //Console.WriteLine("Iteration time: " + iteration.Elapsed.Ticks);
-                //Console.WriteLine("Propagation time: " + propagation.Elapsed.Ticks);
-                //Console.WriteLine("Percentage: " + (1.0 * propagation.Elapsed.Ticks / iteration.Elapsed.Ticks));
+                //if (propagation.Elapsed.Ticks > 5) {
+                    //Console.WriteLine("Iteration time: " + iteration.Elapsed.Ticks);
+                    //Console.WriteLine("Propagation time: " + propagation.Elapsed.Ticks);
+                    //Console.WriteLine("Percentage: " + (1.0 * propagation.Elapsed.Ticks / iteration.Elapsed.Ticks));
+                //}
+
             }
-        }
-        private int SelectLiteral() {
-            for (int i = 1; i < branchingOrder.Count; i++) {
-                int var = branchingOrder[i];
-                if (variables[var] == 0) {
-                    return var;
-                }
-            }
-            throw new Exception("Literal branch not found");
         }
         #endregion
 
         #region satisfiability
-        private bool CheckSatisfiability() {
-            if (clauses.ClauseCount == 0) {
-                Log("NO CLAUSES");
-                return true;
-            }
-
-            // Polarity check
+        private bool CheckPolarity() {
             int[] polarities = new int[VariableCount + 1];
 
             bool polarityCheck = true;
@@ -173,153 +175,123 @@ namespace CNFSolver {
                 }
             }
 
-            if (polarityCheck) {
-                GetSolutionVariablesFromClauses();
-                return true;
-            }
-
-            for (int i = 0; i < clauses.List.Count; i++) {
-                var clause = clauses.List[i];
-                if (clause == null) {
-                    continue;
-                }
-                Log("Checking clause:");
-                Program.PrintList(clause);
-
-                // Check if any clause is UNSAT
-                if (!ClauseIsSatisfied(clause)) {
-                    Log("Was not satisfied");
-                    PrintState();
-                    return false;
-                } else {
-                    Log("Was satisfied");
-                }
-            }
-
-            return true;
-            // Contains no clauses
-            Log("Check SAT, clauses: " + clauses.List.Count);
-            return clauses.List.Count == 0;
-        }
-
-        private bool ClauseIsSatisfied(List<int> clause) {
-            foreach (var l in clause) {
-                int index = l > 0 ? l : -l;
-                if (variables[index] == 0) {
-                    return false;
-                }
-
-                int assignment = l > 0 ? 1 : -1;
-
-                // Check if some variable assignment is true
-                if (variables[index] == assignment) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool HasEmptyClause() {
-            for (int i = 0; i < clauses.List.Count; i++) {
-                if (clauses.List[i] == null) {
-                    continue;
-                }
-                // Contains emtpy clause
-                if (clauses.List[i].Count == 0) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private void GetSolutionVariablesFromClauses() {
-            for (int i = 0; i < clauses.List.Count; i++) {
-                if (clauses.List[i] == null) {
-                    continue;
-                }
-                foreach (var literal in clauses.List[i]) {
-                    int var = GetVar(literal);
-                    int polarity = literal > 0 ? 1 : -1;
-                    variables[var] = polarity;
-                }
-            }
+            return polarityCheck;
         }
         #endregion
 
 
         #region new unit
-        private void RunUnitPropagation() {
-            while (GetVariableToPropagate() is var unit && unit != null) {
-                UnitPropagateOnNew(unit);
+        private void RunInitialUnitPropagation() {
+            List<UnitClause> units = new List<UnitClause>();
+            foreach (var clause in clauses.List) {
+                if (clause == null) {
+                    continue;
+                }
+                if (clause.Count == 1) {
+                    units.Add(new UnitClause(clause[0]));
+                }
+            }
+            foreach (UnitClause unitClause in units) {
+                UnitPropagate(unitClause);
             }
         }
 
-        private void UnitPropagateOnNew(UnitClause unit) {
-
-            Log("Unit propagating on: " + unit.Index);
-            var clausesWithLit = variableAppearances[unit.Index];
+        bool areNonUnitClauses;
+        private void PrepareNewUnitClause(UnitClause unit) {
+            unsatisfiable = false;
+            areNonUnitClauses = false;
+            UnitPropagate(unit);
+            satisfiable = !areNonUnitClauses && CheckPolarity();
+        }
+        private void UnitPropagate(UnitClause unit) {
+            List<UnitClause> newUnitClauses = GetNewUnitClausesFromPropagate(unit);
+            if (newUnitClauses == null) {
+                return;
+            }
+            foreach (UnitClause clause in newUnitClauses) {
+                UnitPropagate(clause);
+            }
+        }
+        private List<UnitClause> GetNewUnitClausesFromPropagate(UnitClause unit) {
+            if (variables[unit.Index] != 0) {
+                //Console.WriteLine("Already propagated: " + unit.Value);
+                return null;
+            }
+            // Get clauses in which variable appears in
+            var clausesToScan = variableAppearances[unit.Index];
+            // Assign necessary variable value
             variables[unit.Index] = unit.Sign;
+            List<UnitClause> newUnits = new List<UnitClause>();
 
-            foreach (int clauseIndex in variableAppearances[unit.Index]) {
+            int redundant = 0;
+            int removedVar = 0;
+
+            foreach (var clauseIndex in clausesToScan) {
                 var clause = clauses.List[clauseIndex];
                 if (clause == null) {
                     continue;
                 }
 
+                // Loop clause variables
                 for (int j = 0; j < clause.Count; j++) {
                     if (unit.Value == clause[j] && clause.Count > 1) {
+
                         clauses.NullifyClause(clauseIndex);
+                        redundant++;
                         break;
                     }
                     if (clauses[clauseIndex, j] == -unit.Value) {
                         clauses.RemoveVarAt(clauseIndex, j);
+                        removedVar++;
                         j--;
                     }
                 }
-            }
-            Log("FINISH PROPAGATE ON: " + unit.Index);
-            PrintState();
-        }
 
-        private UnitClause GetVariableToPropagate() {
-            int iMax = clauses.List.Count;
-            for (int cl = 0; cl < iMax; cl++) {
-                if (clauses.List[cl] == null) {
+                clause = clauses.List[clauseIndex];
+                if (clause == null) {
                     continue;
                 }
-                int jMax = clauses.List[cl].Count;
-                for (int li = 0; li < jMax; li++) {
-                    int value = clauses[cl, li];
-                    int index = GetVar(value);
 
-                    if (variables[index] == 0 && clauses.List[cl].Count == 1) {
-                        UnitClause u = new UnitClause(index, value);
-                        return u;
-                    }
+                int newSize = clauses.GetClauseSize(clauseIndex);
+                // Created new unit clause
+                if (newSize == 1) {
+                    newUnits.Add(new UnitClause(clauses[clauseIndex, 0]));
+                } else if (newSize == 0) {
+                    // We have propagated an empty clause
+                    unsatisfiable = true;
+                } else {
+                    // Some clauses have more than 1 variable, uncertain satisfiability -> must search deeper
+                    areNonUnitClauses = true;
                 }
             }
-            return null;
-        }
 
+            // Console.WriteLine($"Ran unit propagation on {unit.Value} and redundant: {redundant}, removed vars: {removedVar}");
+
+            return newUnits;
+        }
         #endregion
 
         #region utility
         private void Checkpoint() {
+            Log("Current check level: " + variables.CheckPointLevel);
             Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to " + (variables.CheckPointLevel + 1));
             //Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>> Checkpoint level: " + (variables.CheckPointLevel + 1));
+
             variables.CreateCheckpoint();
             clauses.CreateCheckpoint();
+            Log("After check level: " + variables.CheckPointLevel);
         }
         private void Backtrack() {
             Backtrack(variables.CheckPointLevel - 1);
         }
         private void Backtrack(int targeLevel) {
             // targeLevel = variables.CheckPointLevel - 1;
+            Log("Current check level: " + variables.CheckPointLevel);
             Log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< to " + targeLevel);
             variables.RevertToLevel(targeLevel);
             clauses.RevertToLevel(targeLevel);
             //Console.WriteLine("<<<<<<<<<<<<<<<<<<<<<<<< Checkpoint level: target: " + targeLevel + ", actual: " + variables.CheckPointLevel);
+            Log("After check level: " + variables.CheckPointLevel);
         }
 
         public void PrintState(bool force = false) {
@@ -332,7 +304,9 @@ namespace CNFSolver {
             b.AppendLine("Clauses:");
             foreach (var clause in clauseList) {
                 if (clause == null) {
-                    b.Append("EMPTY");
+                    b.Append("REDUNDANT");
+                } else if (clause.Count == 0) {
+                    b.Append("CONFLICT");
                 } else {
                     foreach (int var in clause) {
                         b.Append(var + " ");
@@ -350,7 +324,11 @@ namespace CNFSolver {
             }
             b.AppendLine("-----------------------------------");
 
-            Log(b.ToString());
+            if (force) {
+                Console.WriteLine(b.ToString());
+            } else {
+                Log(b.ToString());
+            }
         }
         #endregion
 
@@ -360,6 +338,10 @@ namespace CNFSolver {
         public int Index;
         public int Value = 0;
         public int Sign => Value > 0 ? 1 : -1;
+        public UnitClause(int value) {
+            this.Value = value;
+            this.Index = SatSolver.GetVar(value);
+        }
         public UnitClause(int variable, int value) {
             Index = variable;
             this.Value = value;
@@ -432,14 +414,14 @@ namespace CNFSolver {
 
         public int GetVariableToBranchOn() {
 
-            for (int i = 0; i < variables.List.Count; i++) {
-                var app = appearances[i];
-                if (variables[app.Variable] == 0) {
-                    return app.Variable;
-                }
-            }
+            //for (int i = 0; i < variables.List.Count; i++) {
+            //    var app = appearances[i];
+            //    if (variables[app.Variable] == 0) {
+            //        return app.Variable;
+            //    }
+            //}
 
-            return 0;
+            //return 0;
             // select first unassigned
             //for (int i = 1; i < variables.List.Count; i++) {
             //    if (variables[i] == 0) {

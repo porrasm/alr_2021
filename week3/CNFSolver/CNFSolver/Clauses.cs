@@ -88,6 +88,10 @@ namespace CNFSolver {
         }
         #endregion
 
+        public int GetClauseSize(int index) {
+            return List[index].Count;
+        }
+
         #region counters
         private void CounterAddClause() {
             counterOperations.Push(() => List.RemoveAt(List.Count - 1));
