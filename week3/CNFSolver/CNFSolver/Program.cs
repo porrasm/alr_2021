@@ -20,12 +20,12 @@ namespace CNFSolver {
             //return;
             if (args.Length != 2) {
                 solver = new DPLLSolver();
-                //SolveSatInstance("P:/Stuff/School/alr_2021/week3/CNFSolver/CNFSolver/example.cnf");
+                SolveSatInstance("P:/Stuff/School/alr_2021/week3/CNFSolver/CNFSolver/example.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week2_boat/k7.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf20-0100.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/bmc-ibm-6.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf100-0102.cnf");
-                SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/hole6.cnf");
+                //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/hole6.cnf");
                 Console.ReadLine();
             } else if (args.Length == 2) {
                 if (args[0] == "dpll" || true) {
@@ -33,6 +33,8 @@ namespace CNFSolver {
                 }
                 if (Directory.Exists(args[1])) {
                     SolveDir(args[1]);
+                } else {
+                    SolveSatInstance(args[1]);
                 }
             }
         }
@@ -59,6 +61,12 @@ namespace CNFSolver {
             }
         }
         private static void SolveSatInstance(string instance) {
+
+            if (instance.Contains("bmc")) {
+                Console.WriteLine("Skippped: " + instance);
+                return; 
+            }
+
             Console.WriteLine("\nSolving problem: " + Path.GetFileName(instance));
             solver.LoadProblem(instance);
             solver.PrintState();
@@ -66,25 +74,30 @@ namespace CNFSolver {
             bool res = false;
             bool finished = false;
 
+            Stopwatch watch = new Stopwatch();
+            long passed = 0;
+
             var cancel = new CancellationTokenSource();
             Thread solveThread = new Thread(() => {
                 Console.WriteLine("Started solve thread");
                 res = solver.Solve();
                 finished = true;
                 cancel.Cancel();
+                passed = watch.ElapsedMilliseconds;
             });
             solveThread.Priority = ThreadPriority.Highest;
 
-            long time = Timer.Milliseconds;
+            watch.Start();
             solveThread.Start();
-            long passed = 0;
 
-            while ((passed = Timer.PassedFrom(time)) < 120000) {
+            while (watch.ElapsedMilliseconds < 120000) {
                 Thread.Sleep(250);
+                if (finished) {
+                    break;
+                }
             }
+            watch.Stop();
 
-
-            time = Timer.PassedFrom(time);
             solveThread.Abort();
 
             if (!finished) {
@@ -95,7 +108,7 @@ namespace CNFSolver {
             }
 
             Console.WriteLine("Solve status: " + res);
-            Console.WriteLine("Solved in " + time + "ms");
+            Console.WriteLine("Solved in " + passed + "ms");
             PrintList(solver.GetVariableAssignments);
 
             solver.Clear();

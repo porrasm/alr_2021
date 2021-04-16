@@ -1,18 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CNFSolver {
 
+    public class VariableAppearance {
+        public int Variable;
+        public int Count;
+
+        public VariableAppearance(int variable, int count) {
+            Variable = variable;
+            Count = count;
+        }
+    }
 
     public class DPLLSolver : SatSolver {
 
         #region fields
         private RList<int> variables;
         private Clauses clauses;
-        private BranchingHeuristic heuristic;
+        private List<int> branchingOrder;
 
         public override List<int> GetVariableAssignments => variables.List;
 
@@ -21,9 +31,15 @@ namespace CNFSolver {
 
         #region solve
         public override bool Solve() {
+
+            Console.WriteLine("Solving with: " + VariableCount);
+
             variables = new RList<int>(new List<int>(new int[VariableCount + 1]));
             clauses = new Clauses(clauseList);
-            heuristic = new BranchingHeuristic(clauses, variables);
+            BranchingHeuristic heuristic = new BranchingHeuristic(clauses, variables);
+            branchingOrder = heuristic.GetBranchingOrder();
+            heuristic = null;
+
             SetVariableAppearances();
 
             return DPLLIterative();
@@ -57,6 +73,7 @@ namespace CNFSolver {
             Stack<ClauseBranch> clauseStack = new Stack<ClauseBranch>();
 
             while (true) {
+                Stopwatch iteration = Stopwatch.StartNew();
 
                 PrintState();
 
@@ -68,7 +85,9 @@ namespace CNFSolver {
                 }
                 Log("DPLL Iteration CLAUSE COUNT: " + clauses.ClauseCount);
 
+                Stopwatch propagation = Stopwatch.StartNew();
                 RunUnitPropagation();
+                propagation.Stop();
 
                 if (HasEmptyClause()) {
                     Log("BRANCH UNSATISFIABLE, continuing");
@@ -93,12 +112,12 @@ namespace CNFSolver {
                     return true;
                 }
 
-                int literal = heuristic.GetVariableToBranchOn();
+                int literal = SelectLiteral();
                 Log("Branching on: " + literal);
                 if (literal == 0) {
                     Log("--------------------------------------------No var found");
                     PrintState(false);
-                    if (clauseStack.Count == 0) {
+                    if (clauseStack.Count > 0) {
                         Backtrack(clauseStack.Peek().RevertLevel);
                     } else {
                         Backtrack();
@@ -109,12 +128,17 @@ namespace CNFSolver {
 
                 clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
                 clauseStack.Push(new ClauseBranch(literal, variables.CheckPointLevel));
+                iteration.Stop();
+                //Console.WriteLine("Iteration time: " + iteration.Elapsed.Ticks);
+                //Console.WriteLine("Propagation time: " + propagation.Elapsed.Ticks);
+                //Console.WriteLine("Percentage: " + (1.0 * propagation.Elapsed.Ticks / iteration.Elapsed.Ticks));
             }
         }
         private int SelectLiteral() {
-            for (int i = 1; i < variables.List.Count; i++) {
-                if (variables[i] == 0) {
-                    return i;
+            for (int i = 1; i < branchingOrder.Count; i++) {
+                int var = branchingOrder[i];
+                if (variables[var] == 0) {
+                    return var;
                 }
             }
             throw new Exception("Literal branch not found");
@@ -177,6 +201,7 @@ namespace CNFSolver {
             Log("Check SAT, clauses: " + clauses.List.Count);
             return clauses.List.Count == 0;
         }
+
         private bool ClauseIsSatisfied(List<int> clause) {
             foreach (var l in clause) {
                 int index = l > 0 ? l : -l;
@@ -267,11 +292,6 @@ namespace CNFSolver {
                 for (int li = 0; li < jMax; li++) {
                     int value = clauses[cl, li];
                     int index = GetVar(value);
-
-                    if (index == 0) {
-                        Console.WriteLine("WATTEFAK: index: " + index + ", value: " + value + ", clause: " + cl + ", li: " + li);
-                        throw new Exception("INDEX WAS 0 WTF");
-                    }
 
                     if (variables[index] == 0 && clauses.List[cl].Count == 1) {
                         UnitClause u = new UnitClause(index, value);
@@ -376,6 +396,7 @@ namespace CNFSolver {
                 return !(left == right);
             }
         }
+        private List<VariableAppearance> appearances;
 
         private Clauses clauses;
         private RList<int> variables;
@@ -385,9 +406,40 @@ namespace CNFSolver {
         public BranchingHeuristic(Clauses clauses, RList<int> variables) {
             this.clauses = clauses;
             this.variables = variables;
+            this.appearances = new List<VariableAppearance>();
+            CalculateAppearances();
+        }
+
+        private void CalculateAppearances() {
+
+            for (int i = 0; i < variables.List.Count; i++) {
+                appearances.Add(new VariableAppearance(i, 0));
+            }
+
+            foreach (var clause in clauses.List) {
+                foreach (int var in clause) {
+                    int index = SatSolver.GetVar(var);
+                    appearances[index].Count++;
+                }
+            }
+
+            appearances = appearances.OrderBy(o => -o.Variable).ToList();
+        }
+
+        public List<int> GetBranchingOrder() {
+            return appearances.Select(o => o.Variable).ToList();
         }
 
         public int GetVariableToBranchOn() {
+
+            for (int i = 0; i < variables.List.Count; i++) {
+                var app = appearances[i];
+                if (variables[app.Variable] == 0) {
+                    return app.Variable;
+                }
+            }
+
+            return 0;
             // select first unassigned
             //for (int i = 1; i < variables.List.Count; i++) {
             //    if (variables[i] == 0) {
@@ -440,5 +492,4 @@ namespace CNFSolver {
             }
         }
     }
-
 }
