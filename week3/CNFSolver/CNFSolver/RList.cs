@@ -8,15 +8,30 @@ namespace CNFSolver {
     public class RList<T> {
 
         #region fields
+        private struct CounterOp {
+            public byte Type;
+            public int Index;
+            public T Value;
+
+            public CounterOp(byte type, int index, T value) {
+                Type = type;
+                Index = index;
+                Value = value;
+            }
+        }
+
         public List<T> List { get; private set; }
-        private Stack<Action> counterOperations;
+        //private Stack<Action> counterOperations;
+        private Stack<CounterOp> counterOperations;
+
         private Stack<int> checkpoints;
         public int CheckPointLevel => checkpoints.Count;
         #endregion
 
         public RList(List<T> initialState) {
             this.List = initialState;
-            counterOperations = new Stack<Action>();
+            //counterOperations = new Stack<Action>();
+            counterOperations = new Stack<CounterOp>();
             checkpoints = new Stack<int>();
         }
 
@@ -44,7 +59,8 @@ namespace CNFSolver {
             }
             int revertCount = counterOperations.Count - cp;
             for (int i = 0; i < revertCount; i++) {
-                counterOperations.Pop()();
+                //counterOperations.Pop()();
+                CounterOperation(counterOperations.Pop());
             }
         }
         public void RevertToLastCheckpoint() {
@@ -66,14 +82,34 @@ namespace CNFSolver {
             CounterAdd();
             List.Add(value);
         }
+        public void RemoveAt(int i) {
+            CounterRemoveAt(i, List[i]);
+            List.RemoveAt(i);
+        }
         #endregion
 
         #region counters
         private void CounterAdd() {
-            counterOperations.Push(() => List.RemoveAt(List.Count - 1));
+            // counterOperations.Push(() => List.RemoveAt(List.Count - 1));
+            counterOperations.Push(new CounterOp(0, List.Count - 1, default));
         }
         private void CounterSet(int i, T v) {
-            counterOperations.Push(() => List[i] = v);
+            // counterOperations.Push(() => List[i] = v);
+            counterOperations.Push(new CounterOp(1, i, v));
+        }
+        private void CounterRemoveAt(int i, T v) {
+            // counterOperations.Push(() => List[i] = v);
+            counterOperations.Push(new CounterOp(2, i, v));
+        }
+
+        private void CounterOperation(CounterOp op) {
+            if (op.Type == 0) {
+                List.RemoveAt(op.Index);
+            } else if (op.Type == 1) {
+                List[op.Index] = op.Value;
+            } else {
+                List.Insert(op.Index, op.Value);
+            }
         }
         #endregion
     }

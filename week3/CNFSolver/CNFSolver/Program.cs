@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CNFSolver {
     class Program {
-        private static DPLLSolver solver;
+        private static string solverType;
         static void Main(string[] args) {
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             Thread.CurrentThread.Priority = ThreadPriority.Lowest;
@@ -19,7 +19,7 @@ namespace CNFSolver {
             //Console.ReadLine();
             //return;
             if (args.Length != 2) {
-                solver = new DPLLSolver();
+                solverType = "dpll";
                 SolveSatInstance("P:/Stuff/School/alr_2021/week3/CNFSolver/CNFSolver/example.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week2_boat/k7.cnf");
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/uf20-0100.cnf");
@@ -28,15 +28,20 @@ namespace CNFSolver {
                 //SolveSatInstance("P:/Stuff/School/alr_2021/cnf/week3/hole6.cnf");
                 Console.ReadLine();
             } else if (args.Length == 2) {
-                if (args[0] == "dpll" || true) {
-                    solver = new DPLLSolver();
-                }
+                solverType = args[0];
                 if (Directory.Exists(args[1])) {
                     SolveDir(args[1]);
                 } else {
                     SolveSatInstance(args[1]);
                 }
             }
+        }
+
+        private static SatSolver GetSolver() {
+            if (solverType == "dpll") {
+                return new DPLLSolver();
+            }
+            return null;
         }
 
         public static void PrintList(List<int> list, bool force = false) {
@@ -61,12 +66,13 @@ namespace CNFSolver {
         }
         private static void SolveSatInstance(string instance) {
 
-            if (instance.Contains("bmc")) {
-                Console.WriteLine("Skippped: " + instance);
-                return; 
-            }
+            //if (instance.Contains("bmc")) {
+            //    Console.WriteLine("Skippped: " + instance);
+            //    return; 
+            //}
 
-            Console.WriteLine("\nSolving problem: " + Path.GetFileName(instance));
+            string instanceName = Path.GetFileName(instance);
+            SatSolver solver = GetSolver();
             solver.LoadProblem(instance);
             //solver.PrintState();
 
@@ -78,8 +84,7 @@ namespace CNFSolver {
 
             var cancel = new CancellationTokenSource();
             Thread solveThread = new Thread(() => {
-                Console.WriteLine("Started solve thread");
-                res = solver.Solve();
+                res = solver.SolveImplementation();
                 finished = true;
                 cancel.Cancel();
                 passed = watch.ElapsedMilliseconds;
@@ -100,62 +105,19 @@ namespace CNFSolver {
             solveThread.Abort();
 
             if (!finished) {
-                Console.WriteLine("Cancelled by timeout");
+                Console.WriteLine($"Cancelled by timeout: \"{instanceName}\"");
                 solveThread.Abort();
                 Console.WriteLine();
                 return;
             }
 
-            Console.WriteLine("Solve status: " + res);
-            Console.WriteLine("Solved in " + passed + "ms");
+            string sat = res ? "SATISFIABLE" : "UNSATISFIABLE";
+            Console.WriteLine($"Solved problem \"{instanceName}\" in {passed} ms, result: {sat}");
+
             PrintList(solver.GetVariableAssignments);
 
             solver.Clear();
             Console.WriteLine();
         }
-
-        private static async Task<bool> Solve(SatSolver solver) {
-            await Task.Yield();
-            return solver.Solve();
-        }
-
-        private Task WrapSolve(Action act) {
-            return Task.Run(() => {
-                Task.Yield();
-                act();
-            });
-        }
-
-        private static void TestClauses() {
-
-            Clauses clauses = new Clauses(new List<List<int>>() {
-            new List<int>() {1, 2, 3},
-            new List<int>() {4, 5, 6},
-            new List<int>() {7, 8, 9}
-            });
-
-            Console.WriteLine(clauses);
-
-            clauses.AddClause(new List<int>() { 10, 11, 12 });
-            clauses.CreateCheckpoint();
-            Console.WriteLine(clauses);
-
-            clauses[0, 0] = 0;
-            clauses.CreateCheckpoint();
-            Console.WriteLine(clauses);
-
-            clauses.AddVar(0, 4);
-            Console.WriteLine(clauses);
-
-            clauses.RevertToLastCheckpoint();
-            Console.WriteLine(clauses);
-
-            clauses.RevertToLastCheckpoint();
-            Console.WriteLine(clauses);
-
-            clauses.RevertToLastCheckpoint();
-            Console.WriteLine(clauses);
-        }
-
     }
 }

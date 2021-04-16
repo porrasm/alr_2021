@@ -1,0 +1,5 @@
+for file in /mnt/p/Stuff/School/alr_2021/cnf/week3/*
+do
+  echo "$file" 
+  time ./kissat/build/kissat "$file" --quiet >> results.out
+done
