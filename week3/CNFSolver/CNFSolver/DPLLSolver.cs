@@ -84,20 +84,22 @@ namespace CNFSolver {
                 Stopwatch iteration = Stopwatch.StartNew();
 
                 PrintState();
-
+                Stopwatch propagation = new Stopwatch();
                 Log("Clause stack: " + clauseStack.Count);
                 if (clauseStack.Count > 0) {
                     Log("Applying branch: " + clauseStack.Peek().Clause);
                     Checkpoint();
                     ClauseBranch clause = clauseStack.Pop();
                     clauses.AddClause(clause.Clause);
+                    propagation.Start();
                     PrepareNewUnitClause(new UnitClause(clause.Clause));
+                    propagation.Stop();
                 }
                 Log("DPLL Iteration CLAUSE COUNT: " + clauses.ClauseCount);
 
-                Stopwatch propagation = Stopwatch.StartNew();
+                
 
-                propagation.Stop();
+                
 
                 if (unsatisfiable) {
                     //if (unsatisfiable) {
@@ -116,7 +118,7 @@ namespace CNFSolver {
                 }
 
                 if (satisfiable) {
-                //if (CheckSatisfiability()) {
+                    //if (CheckSatisfiability()) {
                     PrintState(true);
                     Log("SATISFIABLE, returning");
                     // forget backtrack history and just return 
@@ -144,11 +146,10 @@ namespace CNFSolver {
                 clauseStack.Push(new ClauseBranch(-literal, variables.CheckPointLevel));
                 iteration.Stop();
                 //if (propagation.Elapsed.Ticks > 5) {
-                    //Console.WriteLine("Iteration time: " + iteration.Elapsed.Ticks);
-                    //Console.WriteLine("Propagation time: " + propagation.Elapsed.Ticks);
-                    //Console.WriteLine("Percentage: " + (1.0 * propagation.Elapsed.Ticks / iteration.Elapsed.Ticks));
+                Console.WriteLine("Iteration time: " + iteration.Elapsed.Ticks);
+                Console.WriteLine("Propagation time: " + propagation.Elapsed.Ticks);
+                Console.WriteLine("Percentage: " + (1.0 * propagation.Elapsed.Ticks / iteration.Elapsed.Ticks));
                 //}
-
             }
         }
         #endregion
@@ -177,6 +178,15 @@ namespace CNFSolver {
 
             return polarityCheck;
         }
+
+        private bool AllAssigned() {
+            for (int i = 1; i < variables.List.Count; i++) {
+                if (variables[i] == 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
         #endregion
 
 
@@ -197,11 +207,22 @@ namespace CNFSolver {
         }
 
         bool areNonUnitClauses;
+        int count = 0;
         private void PrepareNewUnitClause(UnitClause unit) {
             unsatisfiable = false;
             areNonUnitClauses = false;
+            count = 0;
+
             UnitPropagate(unit);
+            Console.WriteLine("Propagated on " + count);
+            if (unsatisfiable) {
+                return;
+            }
             satisfiable = !areNonUnitClauses && CheckPolarity();
+            if (satisfiable) {
+                return;
+            }
+            unsatisfiable = AllAssigned();
         }
         private void UnitPropagate(UnitClause unit) {
             List<UnitClause> newUnitClauses = GetNewUnitClausesFromPropagate(unit);
@@ -217,6 +238,7 @@ namespace CNFSolver {
                 //Console.WriteLine("Already propagated: " + unit.Value);
                 return null;
             }
+            count++;
             // Get clauses in which variable appears in
             var clausesToScan = variableAppearances[unit.Index];
             // Assign necessary variable value
@@ -279,6 +301,7 @@ namespace CNFSolver {
 
             variables.CreateCheckpoint();
             clauses.CreateCheckpoint();
+
             Log("After check level: " + variables.CheckPointLevel);
         }
         private void Backtrack() {
@@ -288,13 +311,17 @@ namespace CNFSolver {
             // targeLevel = variables.CheckPointLevel - 1;
             Log("Current check level: " + variables.CheckPointLevel);
             Log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< to " + targeLevel);
+            Stopwatch back = Stopwatch.StartNew();
             variables.RevertToLevel(targeLevel);
             clauses.RevertToLevel(targeLevel);
+            back.Stop();
+            Console.WriteLine("Revert level took " + back.Elapsed.Ticks + " ticks");
             //Console.WriteLine("<<<<<<<<<<<<<<<<<<<<<<<< Checkpoint level: target: " + targeLevel + ", actual: " + variables.CheckPointLevel);
             Log("After check level: " + variables.CheckPointLevel);
         }
 
         public void PrintState(bool force = false) {
+            return;
             if (!force) {
                 //return;
             }
@@ -413,6 +440,13 @@ namespace CNFSolver {
         }
 
         public int GetVariableToBranchOn() {
+            //var rnd = new System.Random();
+            //while (true) {
+            //    int index = rnd.Next(1, variables.List.Count);
+            //    if (variables[index] == 0) {
+            //        return index;
+            //    }
+            //}
 
             //for (int i = 0; i < variables.List.Count; i++) {
             //    var app = appearances[i];
@@ -422,6 +456,7 @@ namespace CNFSolver {
             //}
 
             //return 0;
+
             // select first unassigned
             //for (int i = 1; i < variables.List.Count; i++) {
             //    if (variables[i] == 0) {
@@ -429,6 +464,32 @@ namespace CNFSolver {
             //    }
             //}
             //return 0;
+
+            //int[] counts = new int[variables.List.Count];
+
+            //foreach (var clause in clauses.List) {
+            //    if (clause == null) {
+            //        continue;
+            //    }
+            //    if (clause.Count > 1) {
+            //        foreach (int varValue in clause) {
+            //            int ind = SatSolver.GetVar(varValue);
+            //            counts[ind]++;
+            //        }
+            //    }
+            //}
+
+            //int maxIndex = 0;
+            //int maxVal = 0;
+
+            //for (int i = 1; i < counts.Length; i++) {
+            //    if (counts[i] > maxVal) {
+            //        maxVal = counts[i];
+            //        maxIndex = i;
+            //    }
+            //}
+
+            //return maxIndex;
 
             InitVarCounts();
 

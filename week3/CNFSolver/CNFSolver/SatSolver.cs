@@ -20,8 +20,6 @@ namespace CNFSolver {
 
             string[] lines = File.ReadAllLines(path);
 
-            Log("Read " + lines.Length + " lines");
-
             int i;
             for (i = 0; i < lines.Length; i++) {
                 if (lines[i].StartsWith("p ")) {
@@ -53,6 +51,11 @@ namespace CNFSolver {
             }
         }
 
+        public void Log(string message) {
+            return;
+            Console.WriteLine(message);
+        }
+
         public virtual void Clear() {
             VariableCount = 0;
             clauseList = null;
@@ -63,10 +66,5 @@ namespace CNFSolver {
         }
 
         public abstract bool Solve();
-
-        protected void Log(string message) {
-            return;
-            Console.WriteLine(message);
-        }
     }
 }

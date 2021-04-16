@@ -40,7 +40,6 @@ namespace CNFSolver {
         }
 
         public static void PrintList(List<int> list, bool force = false) {
-            return;
             if (!force) {
                 return;
             }
@@ -69,7 +68,7 @@ namespace CNFSolver {
 
             Console.WriteLine("\nSolving problem: " + Path.GetFileName(instance));
             solver.LoadProblem(instance);
-            solver.PrintState();
+            //solver.PrintState();
 
             bool res = false;
             bool finished = false;
