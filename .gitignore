@@ -17,6 +17,7 @@
 mono_crash.*
 
 venv/
+venvw/
 __pycache__/
 
 # Build results
