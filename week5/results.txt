@@ -1,0 +1,374 @@
+########################################## atcoss_sugar_11
+
+----------------- FM
+s OPTIMUM FOUND
+o 50
+
+real    0m26.472s
+user    0m26.281s
+sys     0m0.141s
+
+----------------- LSU
+o 150
+o 135
+o 131
+o 123
+o 96
+o 94
+o 93
+o 90
+o 88
+o 87
+o 86
+o 85
+o 82
+o 81
+o 80
+o 79
+o 78
+o 75
+o 74
+o 73
+o 72
+o 69
+o 68
+o 66
+o 65
+o 63
+o 62
+o 61
+o 60
+o 58
+o 56
+o 55
+o 54
+o 53
+o 52
+o 51
+o 50
+s OPTIMUM FOUND
+
+real    0m6.823s
+user    0m6.563s
+sys     0m0.234s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 50
+
+real    0m19.381s
+user    0m18.969s
+sys     0m0.297s
+
+########################################## b20_C-mbd14-0202
+
+----------------- FM
+s OPTIMUM FOUND
+o 21
+
+real    0m0.872s
+user    0m0.859s
+sys     0m0.031s
+
+----------------- LSU
+o 29
+o 28
+o 27
+o 26
+o 25
+o 24
+o 23
+o 22
+o 21
+s OPTIMUM FOUND
+
+real    0m3.264s
+user    0m3.172s
+sys     0m0.078s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 21
+
+real    1m0.753s
+user    1m0.297s
+sys     0m0.203s
+
+########################################## b20_C-mbd14-0257
+
+----------------- FM
+s OPTIMUM FOUND
+o 26
+
+real    1m21.309s
+user    1m19.641s
+sys     0m1.594s
+
+----------------- LSU
+o 40
+o 36
+o 34
+o 32
+o 30
+o 28
+o 26
+s OPTIMUM FOUND
+
+real    0m53.153s
+user    0m52.875s
+sys     0m0.219s
+
+----------------- MSU3
+
+real    2m0.009s
+user    1m59.781s
+sys     0m0.234s
+
+########################################## flags
+
+----------------- FM
+s OPTIMUM FOUND
+o 8
+
+real    0m0.513s
+user    0m0.469s
+sys     0m0.047s
+
+----------------- LSU
+o 43
+o 17
+o 16
+o 13
+o 12
+o 11
+o 10
+o 9
+o 8
+s OPTIMUM FOUND
+
+real    0m0.383s
+user    0m0.297s
+sys     0m0.078s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 8
+
+real    0m0.655s
+user    0m0.609s
+sys     0m0.031s
+
+########################################## frb25-13-1
+
+----------------- FM
+s OPTIMUM FOUND
+o 300
+
+real    0m1.847s
+user    0m1.813s
+sys     0m0.047s
+
+----------------- LSU
+o 309
+o 306
+o 305
+o 304
+o 303
+o 302
+o 301
+o 300
+s OPTIMUM FOUND
+
+real    0m1.558s
+user    0m1.500s
+sys     0m0.063s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 300
+
+real    0m18.891s
+user    0m18.313s
+sys     0m0.563s
+
+########################################## frb35-17-1
+
+----------------- FM
+s OPTIMUM FOUND
+o 560
+
+real    0m6.617s
+user    0m6.547s
+sys     0m0.078s
+
+----------------- LSU
+o 570
+o 569
+o 568
+o 567
+o 566
+o 565
+o 564
+o 563
+o 562
+o 561
+o 560
+s OPTIMUM FOUND
+
+real    0m14.393s
+user    0m14.328s
+sys     0m0.047s
+
+----------------- MSU3
+
+real    2m0.009s
+user    1m55.219s
+sys     0m4.516s
+
+########################################## p15
+
+----------------- FM
+s OPTIMUM FOUND
+o 5
+
+real    0m4.286s
+user    0m4.063s
+sys     0m0.219s
+
+----------------- LSU
+o 179
+o 109
+o 106
+o 101
+o 95
+o 89
+o 83
+o 77
+o 71
+o 65
+o 59
+o 56
+o 46
+o 28
+o 26
+o 25
+o 24
+o 23
+o 22
+o 21
+o 20
+o 19
+o 18
+o 16
+o 14
+o 12
+o 11
+o 10
+o 9
+o 8
+o 7
+o 6
+o 5
+s OPTIMUM FOUND
+
+real    0m10.691s
+user    0m10.406s
+sys     0m0.281s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 5
+
+real    0m9.412s
+user    0m9.250s
+sys     0m0.156s
+
+########################################## role_domino_violations_0
+
+----------------- FM
+s OPTIMUM FOUND
+o 2
+
+real    0m7.818s
+user    0m7.313s
+sys     0m0.484s
+
+----------------- LSU
+o 2
+s OPTIMUM FOUND
+
+real    0m3.630s
+user    0m3.266s
+sys     0m0.359s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 2
+
+real    0m7.888s
+user    0m7.266s
+sys     0m0.609s
+
+########################################## rsdecoder-problem
+
+----------------- FM
+s OPTIMUM FOUND
+o 1
+
+real    0m5.287s
+user    0m4.797s
+sys     0m0.500s
+
+----------------- LSU
+o 5
+o 4
+o 3
+o 2
+o 1
+s OPTIMUM FOUND
+
+real    0m16.751s
+user    0m13.813s
+sys     0m2.859s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 1
+
+real    0m51.721s
+user    0m51.141s
+sys     0m0.563s
+
+########################################## zoo
+
+----------------- FM
+s OPTIMUM FOUND
+o 20
+
+real    0m0.135s
+user    0m0.109s
+sys     0m0.031s
+
+----------------- LSU
+o 56
+o 31
+o 30
+o 29
+o 28
+o 25
+o 22
+o 21
+o 20
+s OPTIMUM FOUND
+
+real    0m0.103s
+user    0m0.063s
+sys     0m0.031s
+
+----------------- MSU3
+s OPTIMUM FOUND
+o 20
+
+real    0m0.187s
+user    0m0.141s
+sys     0m0.031s
