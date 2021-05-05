@@ -66,6 +66,7 @@ class MSU3:
         self.oracle.append_formula(self.soft)
         rlist = self.r_to_list()
         self.oracle.append_formula(CardEnc.atmost(lits=rlist, bound=self.k, top_id=self.topv).clauses)
+        
     
     def r_to_list(self):
         l = list()
